@@ -29,6 +29,26 @@ import java.util.regex.Pattern;
  * <p> <a href="https://playwright.dev/java/docs/locators">Learn more about locators</a>.
  */
 public interface Locator {
+  class AriaSnapshotOptions {
+    /**
+     * Maximum time in milliseconds. Defaults to {@code 30000} (30 seconds). Pass {@code 0} to disable timeout. The default
+     * value can be changed by using the {@link com.microsoft.playwright.BrowserContext#setDefaultTimeout
+     * BrowserContext.setDefaultTimeout()} or {@link com.microsoft.playwright.Page#setDefaultTimeout Page.setDefaultTimeout()}
+     * methods.
+     */
+    public Double timeout;
+
+    /**
+     * Maximum time in milliseconds. Defaults to {@code 30000} (30 seconds). Pass {@code 0} to disable timeout. The default
+     * value can be changed by using the {@link com.microsoft.playwright.BrowserContext#setDefaultTimeout
+     * BrowserContext.setDefaultTimeout()} or {@link com.microsoft.playwright.Page#setDefaultTimeout Page.setDefaultTimeout()}
+     * methods.
+     */
+    public AriaSnapshotOptions setTimeout(double timeout) {
+      this.timeout = timeout;
+      return this;
+    }
+  }
   class BlurOptions {
     /**
      * Maximum time in milliseconds. Defaults to {@code 30000} (30 seconds). Pass {@code 0} to disable timeout. The default
@@ -76,9 +96,7 @@ public interface Locator {
      */
     public Boolean force;
     /**
-     * Actions that initiate navigations are waiting for these navigations to happen and for pages to start loading. You can
-     * opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to
-     * inaccessible pages. Defaults to {@code false}.
+     * @deprecated This option has no effect.
      */
     public Boolean noWaitAfter;
     /**
@@ -109,9 +127,7 @@ public interface Locator {
       return this;
     }
     /**
-     * Actions that initiate navigations are waiting for these navigations to happen and for pages to start loading. You can
-     * opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to
-     * inaccessible pages. Defaults to {@code false}.
+     * @deprecated This option has no effect.
      */
     public CheckOptions setNoWaitAfter(boolean noWaitAfter) {
       this.noWaitAfter = noWaitAfter;
@@ -159,9 +175,7 @@ public interface Locator {
      */
     public Boolean force;
     /**
-     * Actions that initiate navigations are waiting for these navigations to happen and for pages to start loading. You can
-     * opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to
-     * inaccessible pages. Defaults to {@code false}.
+     * @deprecated This option has no effect.
      */
     public Boolean noWaitAfter;
     /**
@@ -181,9 +195,7 @@ public interface Locator {
       return this;
     }
     /**
-     * Actions that initiate navigations are waiting for these navigations to happen and for pages to start loading. You can
-     * opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to
-     * inaccessible pages. Defaults to {@code false}.
+     * @deprecated This option has no effect.
      */
     public ClearOptions setNoWaitAfter(boolean noWaitAfter) {
       this.noWaitAfter = noWaitAfter;
@@ -225,9 +237,7 @@ public interface Locator {
      */
     public List<KeyboardModifier> modifiers;
     /**
-     * Actions that initiate navigations are waiting for these navigations to happen and for pages to start loading. You can
-     * opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to
-     * inaccessible pages. Defaults to {@code false}.
+     * @deprecated This option will default to {@code true} in the future.
      */
     public Boolean noWaitAfter;
     /**
@@ -245,7 +255,8 @@ public interface Locator {
     /**
      * When set, this method only performs the <a href="https://playwright.dev/java/docs/actionability">actionability</a>
      * checks and skips the action. Defaults to {@code false}. Useful to wait until the element is ready for the action without
-     * performing it.
+     * performing it. Note that keyboard {@code modifiers} will be pressed regardless of {@code trial} to allow testing
+     * elements which are only visible when those keys are pressed.
      */
     public Boolean trial;
 
@@ -288,9 +299,7 @@ public interface Locator {
       return this;
     }
     /**
-     * Actions that initiate navigations are waiting for these navigations to happen and for pages to start loading. You can
-     * opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to
-     * inaccessible pages. Defaults to {@code false}.
+     * @deprecated This option will default to {@code true} in the future.
      */
     public ClickOptions setNoWaitAfter(boolean noWaitAfter) {
       this.noWaitAfter = noWaitAfter;
@@ -324,7 +333,8 @@ public interface Locator {
     /**
      * When set, this method only performs the <a href="https://playwright.dev/java/docs/actionability">actionability</a>
      * checks and skips the action. Defaults to {@code false}. Useful to wait until the element is ready for the action without
-     * performing it.
+     * performing it. Note that keyboard {@code modifiers} will be pressed regardless of {@code trial} to allow testing
+     * elements which are only visible when those keys are pressed.
      */
     public ClickOptions setTrial(boolean trial) {
       this.trial = trial;
@@ -352,9 +362,7 @@ public interface Locator {
      */
     public List<KeyboardModifier> modifiers;
     /**
-     * Actions that initiate navigations are waiting for these navigations to happen and for pages to start loading. You can
-     * opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to
-     * inaccessible pages. Defaults to {@code false}.
+     * @deprecated This option has no effect.
      */
     public Boolean noWaitAfter;
     /**
@@ -372,7 +380,8 @@ public interface Locator {
     /**
      * When set, this method only performs the <a href="https://playwright.dev/java/docs/actionability">actionability</a>
      * checks and skips the action. Defaults to {@code false}. Useful to wait until the element is ready for the action without
-     * performing it.
+     * performing it. Note that keyboard {@code modifiers} will be pressed regardless of {@code trial} to allow testing
+     * elements which are only visible when those keys are pressed.
      */
     public Boolean trial;
 
@@ -408,9 +417,7 @@ public interface Locator {
       return this;
     }
     /**
-     * Actions that initiate navigations are waiting for these navigations to happen and for pages to start loading. You can
-     * opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to
-     * inaccessible pages. Defaults to {@code false}.
+     * @deprecated This option has no effect.
      */
     public DblclickOptions setNoWaitAfter(boolean noWaitAfter) {
       this.noWaitAfter = noWaitAfter;
@@ -444,7 +451,8 @@ public interface Locator {
     /**
      * When set, this method only performs the <a href="https://playwright.dev/java/docs/actionability">actionability</a>
      * checks and skips the action. Defaults to {@code false}. Useful to wait until the element is ready for the action without
-     * performing it.
+     * performing it. Note that keyboard {@code modifiers} will be pressed regardless of {@code trial} to allow testing
+     * elements which are only visible when those keys are pressed.
      */
     public DblclickOptions setTrial(boolean trial) {
       this.trial = trial;
@@ -478,9 +486,7 @@ public interface Locator {
      */
     public Boolean force;
     /**
-     * Actions that initiate navigations are waiting for these navigations to happen and for pages to start loading. You can
-     * opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to
-     * inaccessible pages. Defaults to {@code false}.
+     * @deprecated This option has no effect.
      */
     public Boolean noWaitAfter;
     /**
@@ -516,9 +522,7 @@ public interface Locator {
       return this;
     }
     /**
-     * Actions that initiate navigations are waiting for these navigations to happen and for pages to start loading. You can
-     * opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to
-     * inaccessible pages. Defaults to {@code false}.
+     * @deprecated This option has no effect.
      */
     public DragToOptions setNoWaitAfter(boolean noWaitAfter) {
       this.noWaitAfter = noWaitAfter;
@@ -641,9 +645,7 @@ public interface Locator {
      */
     public Boolean force;
     /**
-     * Actions that initiate navigations are waiting for these navigations to happen and for pages to start loading. You can
-     * opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to
-     * inaccessible pages. Defaults to {@code false}.
+     * @deprecated This option has no effect.
      */
     public Boolean noWaitAfter;
     /**
@@ -663,9 +665,7 @@ public interface Locator {
       return this;
     }
     /**
-     * Actions that initiate navigations are waiting for these navigations to happen and for pages to start loading. You can
-     * opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to
-     * inaccessible pages. Defaults to {@code false}.
+     * @deprecated This option has no effect.
      */
     public FillOptions setNoWaitAfter(boolean noWaitAfter) {
       this.noWaitAfter = noWaitAfter;
@@ -1065,9 +1065,7 @@ public interface Locator {
      */
     public List<KeyboardModifier> modifiers;
     /**
-     * Actions that initiate navigations are waiting for these navigations to happen and for pages to start loading. You can
-     * opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to
-     * inaccessible pages. Defaults to {@code false}.
+     * @deprecated This option has no effect.
      */
     public Boolean noWaitAfter;
     /**
@@ -1085,7 +1083,8 @@ public interface Locator {
     /**
      * When set, this method only performs the <a href="https://playwright.dev/java/docs/actionability">actionability</a>
      * checks and skips the action. Defaults to {@code false}. Useful to wait until the element is ready for the action without
-     * performing it.
+     * performing it. Note that keyboard {@code modifiers} will be pressed regardless of {@code trial} to allow testing
+     * elements which are only visible when those keys are pressed.
      */
     public Boolean trial;
 
@@ -1107,9 +1106,7 @@ public interface Locator {
       return this;
     }
     /**
-     * Actions that initiate navigations are waiting for these navigations to happen and for pages to start loading. You can
-     * opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to
-     * inaccessible pages. Defaults to {@code false}.
+     * @deprecated This option has no effect.
      */
     public HoverOptions setNoWaitAfter(boolean noWaitAfter) {
       this.noWaitAfter = noWaitAfter;
@@ -1143,7 +1140,8 @@ public interface Locator {
     /**
      * When set, this method only performs the <a href="https://playwright.dev/java/docs/actionability">actionability</a>
      * checks and skips the action. Defaults to {@code false}. Useful to wait until the element is ready for the action without
-     * performing it.
+     * performing it. Note that keyboard {@code modifiers} will be pressed regardless of {@code trial} to allow testing
+     * elements which are only visible when those keys are pressed.
      */
     public HoverOptions setTrial(boolean trial) {
       this.trial = trial;
@@ -1424,9 +1422,7 @@ public interface Locator {
      */
     public Double delay;
     /**
-     * Actions that initiate navigations are waiting for these navigations to happen and for pages to start loading. You can
-     * opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to
-     * inaccessible pages. Defaults to {@code false}.
+     * @deprecated This option will default to {@code true} in the future.
      */
     public Boolean noWaitAfter;
     /**
@@ -1445,9 +1441,7 @@ public interface Locator {
       return this;
     }
     /**
-     * Actions that initiate navigations are waiting for these navigations to happen and for pages to start loading. You can
-     * opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to
-     * inaccessible pages. Defaults to {@code false}.
+     * @deprecated This option will default to {@code true} in the future.
      */
     public PressOptions setNoWaitAfter(boolean noWaitAfter) {
       this.noWaitAfter = noWaitAfter;
@@ -1470,9 +1464,7 @@ public interface Locator {
      */
     public Double delay;
     /**
-     * Actions that initiate navigations are waiting for these navigations to happen and for pages to start loading. You can
-     * opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to
-     * inaccessible pages. Defaults to {@code false}.
+     * @deprecated This option has no effect.
      */
     public Boolean noWaitAfter;
     /**
@@ -1491,9 +1483,7 @@ public interface Locator {
       return this;
     }
     /**
-     * Actions that initiate navigations are waiting for these navigations to happen and for pages to start loading. You can
-     * opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to
-     * inaccessible pages. Defaults to {@code false}.
+     * @deprecated This option has no effect.
      */
     public PressSequentiallyOptions setNoWaitAfter(boolean noWaitAfter) {
       this.noWaitAfter = noWaitAfter;
@@ -1707,9 +1697,7 @@ public interface Locator {
      */
     public Boolean force;
     /**
-     * Actions that initiate navigations are waiting for these navigations to happen and for pages to start loading. You can
-     * opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to
-     * inaccessible pages. Defaults to {@code false}.
+     * @deprecated This option has no effect.
      */
     public Boolean noWaitAfter;
     /**
@@ -1729,9 +1717,7 @@ public interface Locator {
       return this;
     }
     /**
-     * Actions that initiate navigations are waiting for these navigations to happen and for pages to start loading. You can
-     * opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to
-     * inaccessible pages. Defaults to {@code false}.
+     * @deprecated This option has no effect.
      */
     public SelectOptionOptions setNoWaitAfter(boolean noWaitAfter) {
       this.noWaitAfter = noWaitAfter;
@@ -1788,9 +1774,7 @@ public interface Locator {
      */
     public Boolean force;
     /**
-     * Actions that initiate navigations are waiting for these navigations to happen and for pages to start loading. You can
-     * opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to
-     * inaccessible pages. Defaults to {@code false}.
+     * @deprecated This option has no effect.
      */
     public Boolean noWaitAfter;
     /**
@@ -1821,9 +1805,7 @@ public interface Locator {
       return this;
     }
     /**
-     * Actions that initiate navigations are waiting for these navigations to happen and for pages to start loading. You can
-     * opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to
-     * inaccessible pages. Defaults to {@code false}.
+     * @deprecated This option has no effect.
      */
     public SetCheckedOptions setNoWaitAfter(boolean noWaitAfter) {
       this.noWaitAfter = noWaitAfter;
@@ -1866,9 +1848,7 @@ public interface Locator {
   }
   class SetInputFilesOptions {
     /**
-     * Actions that initiate navigations are waiting for these navigations to happen and for pages to start loading. You can
-     * opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to
-     * inaccessible pages. Defaults to {@code false}.
+     * @deprecated This option has no effect.
      */
     public Boolean noWaitAfter;
     /**
@@ -1880,9 +1860,7 @@ public interface Locator {
     public Double timeout;
 
     /**
-     * Actions that initiate navigations are waiting for these navigations to happen and for pages to start loading. You can
-     * opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to
-     * inaccessible pages. Defaults to {@code false}.
+     * @deprecated This option has no effect.
      */
     public SetInputFilesOptions setNoWaitAfter(boolean noWaitAfter) {
       this.noWaitAfter = noWaitAfter;
@@ -1912,9 +1890,7 @@ public interface Locator {
      */
     public List<KeyboardModifier> modifiers;
     /**
-     * Actions that initiate navigations are waiting for these navigations to happen and for pages to start loading. You can
-     * opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to
-     * inaccessible pages. Defaults to {@code false}.
+     * @deprecated This option has no effect.
      */
     public Boolean noWaitAfter;
     /**
@@ -1932,7 +1908,8 @@ public interface Locator {
     /**
      * When set, this method only performs the <a href="https://playwright.dev/java/docs/actionability">actionability</a>
      * checks and skips the action. Defaults to {@code false}. Useful to wait until the element is ready for the action without
-     * performing it.
+     * performing it. Note that keyboard {@code modifiers} will be pressed regardless of {@code trial} to allow testing
+     * elements which are only visible when those keys are pressed.
      */
     public Boolean trial;
 
@@ -1954,9 +1931,7 @@ public interface Locator {
       return this;
     }
     /**
-     * Actions that initiate navigations are waiting for these navigations to happen and for pages to start loading. You can
-     * opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to
-     * inaccessible pages. Defaults to {@code false}.
+     * @deprecated This option has no effect.
      */
     public TapOptions setNoWaitAfter(boolean noWaitAfter) {
       this.noWaitAfter = noWaitAfter;
@@ -1990,7 +1965,8 @@ public interface Locator {
     /**
      * When set, this method only performs the <a href="https://playwright.dev/java/docs/actionability">actionability</a>
      * checks and skips the action. Defaults to {@code false}. Useful to wait until the element is ready for the action without
-     * performing it.
+     * performing it. Note that keyboard {@code modifiers} will be pressed regardless of {@code trial} to allow testing
+     * elements which are only visible when those keys are pressed.
      */
     public TapOptions setTrial(boolean trial) {
       this.trial = trial;
@@ -2023,9 +1999,7 @@ public interface Locator {
      */
     public Double delay;
     /**
-     * Actions that initiate navigations are waiting for these navigations to happen and for pages to start loading. You can
-     * opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to
-     * inaccessible pages. Defaults to {@code false}.
+     * @deprecated This option has no effect.
      */
     public Boolean noWaitAfter;
     /**
@@ -2044,9 +2018,7 @@ public interface Locator {
       return this;
     }
     /**
-     * Actions that initiate navigations are waiting for these navigations to happen and for pages to start loading. You can
-     * opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to
-     * inaccessible pages. Defaults to {@code false}.
+     * @deprecated This option has no effect.
      */
     public TypeOptions setNoWaitAfter(boolean noWaitAfter) {
       this.noWaitAfter = noWaitAfter;
@@ -2070,9 +2042,7 @@ public interface Locator {
      */
     public Boolean force;
     /**
-     * Actions that initiate navigations are waiting for these navigations to happen and for pages to start loading. You can
-     * opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to
-     * inaccessible pages. Defaults to {@code false}.
+     * @deprecated This option has no effect.
      */
     public Boolean noWaitAfter;
     /**
@@ -2103,9 +2073,7 @@ public interface Locator {
       return this;
     }
     /**
-     * Actions that initiate navigations are waiting for these navigations to happen and for pages to start loading. You can
-     * opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to
-     * inaccessible pages. Defaults to {@code false}.
+     * @deprecated This option has no effect.
      */
     public UncheckOptions setNoWaitAfter(boolean noWaitAfter) {
       this.noWaitAfter = noWaitAfter;
@@ -2197,14 +2165,13 @@ public interface Locator {
    * When the locator points to a list of elements, this returns an array of locators, pointing to their respective elements.
    *
    * <p> <strong>NOTE:</strong> {@link com.microsoft.playwright.Locator#all Locator.all()} does not wait for elements to match the locator, and instead
-   * immediately returns whatever is present in the page.  When the list of elements changes dynamically, {@link
-   * com.microsoft.playwright.Locator#all Locator.all()} will produce unpredictable and flaky results.  When the list of
-   * elements is stable, but loaded dynamically, wait for the full list to finish loading before calling {@link
-   * com.microsoft.playwright.Locator#all Locator.all()}.
+   * immediately returns whatever is present in the page.When the list of elements changes dynamically, {@link com.microsoft.playwright.Locator#all Locator.all()} will produce
+   * unpredictable and flaky results.When the list of elements is stable, but loaded dynamically, wait for the full list to finish loading before calling
+   * {@link com.microsoft.playwright.Locator#all Locator.all()}.
    *
    * <p> <strong>Usage</strong>
    * <pre>{@code
-   * for (Locator li : page.getByRole('listitem').all())
+   * for (Locator li : page.getByRole("listitem").all())
    *   li.click();
    * }</pre>
    *
@@ -2255,6 +2222,66 @@ public interface Locator {
    * @since v1.34
    */
   Locator and(Locator locator);
+  /**
+   * Captures the aria snapshot of the given element. Read more about <a
+   * href="https://playwright.dev/java/docs/aria-snapshots">aria snapshots</a> and {@link
+   * com.microsoft.playwright.assertions.LocatorAssertions#matchesAriaSnapshot LocatorAssertions.matchesAriaSnapshot()} for
+   * the corresponding assertion.
+   *
+   * <p> <strong>Usage</strong>
+   * <pre>{@code
+   * page.getByRole(AriaRole.LINK).ariaSnapshot();
+   * }</pre>
+   *
+   * <p> <strong>Details</strong>
+   *
+   * <p> This method captures the aria snapshot of the given element. The snapshot is a string that represents the state of the
+   * element and its children. The snapshot can be used to assert the state of the element in the test, or to compare it to
+   * state in the future.
+   *
+   * <p> The ARIA snapshot is represented using <a href="https://yaml.org/spec/1.2.2/">YAML</a> markup language:
+   * <ul>
+   * <li> The keys of the objects are the roles and optional accessible names of the elements.</li>
+   * <li> The values are either text content or an array of child elements.</li>
+   * <li> Generic static text can be represented with the {@code text} key.</li>
+   * </ul>
+   *
+   * <p> Below is the HTML markup and the respective ARIA snapshot:
+   *
+   * @since v1.49
+   */
+  default String ariaSnapshot() {
+    return ariaSnapshot(null);
+  }
+  /**
+   * Captures the aria snapshot of the given element. Read more about <a
+   * href="https://playwright.dev/java/docs/aria-snapshots">aria snapshots</a> and {@link
+   * com.microsoft.playwright.assertions.LocatorAssertions#matchesAriaSnapshot LocatorAssertions.matchesAriaSnapshot()} for
+   * the corresponding assertion.
+   *
+   * <p> <strong>Usage</strong>
+   * <pre>{@code
+   * page.getByRole(AriaRole.LINK).ariaSnapshot();
+   * }</pre>
+   *
+   * <p> <strong>Details</strong>
+   *
+   * <p> This method captures the aria snapshot of the given element. The snapshot is a string that represents the state of the
+   * element and its children. The snapshot can be used to assert the state of the element in the test, or to compare it to
+   * state in the future.
+   *
+   * <p> The ARIA snapshot is represented using <a href="https://yaml.org/spec/1.2.2/">YAML</a> markup language:
+   * <ul>
+   * <li> The keys of the objects are the roles and optional accessible names of the elements.</li>
+   * <li> The values are either text content or an array of child elements.</li>
+   * <li> Generic static text can be represented with the {@code text} key.</li>
+   * </ul>
+   *
+   * <p> Below is the HTML markup and the respective ARIA snapshot:
+   *
+   * @since v1.49
+   */
+  String ariaSnapshot(AriaSnapshotOptions options);
   /**
    * Calls <a href="https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/blur">blur</a> on the element.
    *
@@ -2334,7 +2361,6 @@ public interface Locator {
    * force} option is set.</li>
    * <li> Scroll the element into view if needed.</li>
    * <li> Use {@link com.microsoft.playwright.Page#mouse Page.mouse()} to click in the center of the element.</li>
-   * <li> Wait for initiated navigations to either succeed or fail, unless {@code noWaitAfter} option is set.</li>
    * <li> Ensure that the element is now checked. If not, this method throws.</li>
    * </ol>
    *
@@ -2366,7 +2392,6 @@ public interface Locator {
    * force} option is set.</li>
    * <li> Scroll the element into view if needed.</li>
    * <li> Use {@link com.microsoft.playwright.Page#mouse Page.mouse()} to click in the center of the element.</li>
-   * <li> Wait for initiated navigations to either succeed or fail, unless {@code noWaitAfter} option is set.</li>
    * <li> Ensure that the element is now checked. If not, this method throws.</li>
    * </ol>
    *
@@ -2532,8 +2557,6 @@ public interface Locator {
    * <li> Scroll the element into view if needed.</li>
    * <li> Use {@link com.microsoft.playwright.Page#mouse Page.mouse()} to double click in the center of the element, or the
    * specified {@code position}.</li>
-   * <li> Wait for initiated navigations to either succeed or fail, unless {@code noWaitAfter} option is set. Note that if the
-   * first click of the {@code dblclick()} triggers a navigation event, this method will throw.</li>
    * </ol>
    *
    * <p> If the element is detached from the DOM at any moment during the action, this method throws.
@@ -2560,8 +2583,6 @@ public interface Locator {
    * <li> Scroll the element into view if needed.</li>
    * <li> Use {@link com.microsoft.playwright.Page#mouse Page.mouse()} to double click in the center of the element, or the
    * specified {@code position}.</li>
-   * <li> Wait for initiated navigations to either succeed or fail, unless {@code noWaitAfter} option is set. Note that if the
-   * first click of the {@code dblclick()} triggers a navigation event, this method will throw.</li>
    * </ol>
    *
    * <p> If the element is detached from the DOM at any moment during the action, this method throws.
@@ -2609,7 +2630,6 @@ public interface Locator {
    *
    * <p> You can also specify {@code JSHandle} as the property value if you want live objects to be passed into the event:
    * <pre>{@code
-   * // Note you can only create DataTransfer in Chromium and Firefox
    * JSHandle dataTransfer = page.evaluateHandle("() => new DataTransfer()");
    * Map<String, Object> arg = new HashMap<>();
    * arg.put("dataTransfer", dataTransfer);
@@ -2658,7 +2678,6 @@ public interface Locator {
    *
    * <p> You can also specify {@code JSHandle} as the property value if you want live objects to be passed into the event:
    * <pre>{@code
-   * // Note you can only create DataTransfer in Chromium and Firefox
    * JSHandle dataTransfer = page.evaluateHandle("() => new DataTransfer()");
    * Map<String, Object> arg = new HashMap<>();
    * arg.put("dataTransfer", dataTransfer);
@@ -2706,7 +2725,6 @@ public interface Locator {
    *
    * <p> You can also specify {@code JSHandle} as the property value if you want live objects to be passed into the event:
    * <pre>{@code
-   * // Note you can only create DataTransfer in Chromium and Firefox
    * JSHandle dataTransfer = page.evaluateHandle("() => new DataTransfer()");
    * Map<String, Object> arg = new HashMap<>();
    * arg.put("dataTransfer", dataTransfer);
@@ -3514,19 +3532,19 @@ public interface Locator {
    * <p> You can locate by text substring, exact string, or a regular expression:
    * <pre>{@code
    * // Matches <span>
-   * page.getByText("world")
+   * page.getByText("world");
    *
    * // Matches first <div>
-   * page.getByText("Hello world")
+   * page.getByText("Hello world");
    *
    * // Matches second <div>
-   * page.getByText("Hello", new Page.GetByTextOptions().setExact(true))
+   * page.getByText("Hello", new Page.GetByTextOptions().setExact(true));
    *
    * // Matches both <div>s
-   * page.getByText(Pattern.compile("Hello"))
+   * page.getByText(Pattern.compile("Hello"));
    *
    * // Matches second <div>
-   * page.getByText(Pattern.compile("^hello$", Pattern.CASE_INSENSITIVE))
+   * page.getByText(Pattern.compile("^hello$", Pattern.CASE_INSENSITIVE));
    * }</pre>
    *
    * <p> <strong>Details</strong>
@@ -3556,19 +3574,19 @@ public interface Locator {
    * <p> You can locate by text substring, exact string, or a regular expression:
    * <pre>{@code
    * // Matches <span>
-   * page.getByText("world")
+   * page.getByText("world");
    *
    * // Matches first <div>
-   * page.getByText("Hello world")
+   * page.getByText("Hello world");
    *
    * // Matches second <div>
-   * page.getByText("Hello", new Page.GetByTextOptions().setExact(true))
+   * page.getByText("Hello", new Page.GetByTextOptions().setExact(true));
    *
    * // Matches both <div>s
-   * page.getByText(Pattern.compile("Hello"))
+   * page.getByText(Pattern.compile("Hello"));
    *
    * // Matches second <div>
-   * page.getByText(Pattern.compile("^hello$", Pattern.CASE_INSENSITIVE))
+   * page.getByText(Pattern.compile("^hello$", Pattern.CASE_INSENSITIVE));
    * }</pre>
    *
    * <p> <strong>Details</strong>
@@ -3596,19 +3614,19 @@ public interface Locator {
    * <p> You can locate by text substring, exact string, or a regular expression:
    * <pre>{@code
    * // Matches <span>
-   * page.getByText("world")
+   * page.getByText("world");
    *
    * // Matches first <div>
-   * page.getByText("Hello world")
+   * page.getByText("Hello world");
    *
    * // Matches second <div>
-   * page.getByText("Hello", new Page.GetByTextOptions().setExact(true))
+   * page.getByText("Hello", new Page.GetByTextOptions().setExact(true));
    *
    * // Matches both <div>s
-   * page.getByText(Pattern.compile("Hello"))
+   * page.getByText(Pattern.compile("Hello"));
    *
    * // Matches second <div>
-   * page.getByText(Pattern.compile("^hello$", Pattern.CASE_INSENSITIVE))
+   * page.getByText(Pattern.compile("^hello$", Pattern.CASE_INSENSITIVE));
    * }</pre>
    *
    * <p> <strong>Details</strong>
@@ -3638,19 +3656,19 @@ public interface Locator {
    * <p> You can locate by text substring, exact string, or a regular expression:
    * <pre>{@code
    * // Matches <span>
-   * page.getByText("world")
+   * page.getByText("world");
    *
    * // Matches first <div>
-   * page.getByText("Hello world")
+   * page.getByText("Hello world");
    *
    * // Matches second <div>
-   * page.getByText("Hello", new Page.GetByTextOptions().setExact(true))
+   * page.getByText("Hello", new Page.GetByTextOptions().setExact(true));
    *
    * // Matches both <div>s
-   * page.getByText(Pattern.compile("Hello"))
+   * page.getByText(Pattern.compile("Hello"));
    *
    * // Matches second <div>
-   * page.getByText(Pattern.compile("^hello$", Pattern.CASE_INSENSITIVE))
+   * page.getByText(Pattern.compile("^hello$", Pattern.CASE_INSENSITIVE));
    * }</pre>
    *
    * <p> <strong>Details</strong>
@@ -3757,7 +3775,6 @@ public interface Locator {
    * <li> Scroll the element into view if needed.</li>
    * <li> Use {@link com.microsoft.playwright.Page#mouse Page.mouse()} to hover over the center of the element, or the specified
    * {@code position}.</li>
-   * <li> Wait for initiated navigations to either succeed or fail, unless {@code noWaitAfter} option is set.</li>
    * </ol>
    *
    * <p> If the element is detached from the DOM at any moment during the action, this method throws.
@@ -3787,7 +3804,6 @@ public interface Locator {
    * <li> Scroll the element into view if needed.</li>
    * <li> Use {@link com.microsoft.playwright.Page#mouse Page.mouse()} to hover over the center of the element, or the specified
    * {@code position}.</li>
-   * <li> Wait for initiated navigations to either succeed or fail, unless {@code noWaitAfter} option is set.</li>
    * </ol>
    *
    * <p> If the element is detached from the DOM at any moment during the action, this method throws.
@@ -3949,7 +3965,9 @@ public interface Locator {
    */
   boolean isDisabled(IsDisabledOptions options);
   /**
-   * Returns whether the element is <a href="https://playwright.dev/java/docs/actionability#editable">editable</a>.
+   * Returns whether the element is <a href="https://playwright.dev/java/docs/actionability#editable">editable</a>. If the
+   * target element is not an {@code <input>}, {@code <textarea>}, {@code <select>}, {@code [contenteditable]} and does not
+   * have a role allowing {@code [aria-readonly]}, this method throws an error.
    *
    * <p> <strong>NOTE:</strong> If you need to assert that an element is editable, prefer {@link
    * com.microsoft.playwright.assertions.LocatorAssertions#isEditable LocatorAssertions.isEditable()} to avoid flakiness. See
@@ -3966,7 +3984,9 @@ public interface Locator {
     return isEditable(null);
   }
   /**
-   * Returns whether the element is <a href="https://playwright.dev/java/docs/actionability#editable">editable</a>.
+   * Returns whether the element is <a href="https://playwright.dev/java/docs/actionability#editable">editable</a>. If the
+   * target element is not an {@code <input>}, {@code <textarea>}, {@code <select>}, {@code [contenteditable]} and does not
+   * have a role allowing {@code [aria-readonly]}, this method throws an error.
    *
    * <p> <strong>NOTE:</strong> If you need to assert that an element is editable, prefer {@link
    * com.microsoft.playwright.assertions.LocatorAssertions#isEditable LocatorAssertions.isEditable()} to avoid flakiness. See
@@ -4145,16 +4165,23 @@ public interface Locator {
    */
   Locator nth(int index);
   /**
-   * Creates a locator that matches either of the two locators.
+   * Creates a locator matching all elements that match one or both of the two locators.
+   *
+   * <p> Note that when both locators match something, the resulting locator will have multiple matches, potentially causing a <a
+   * href="https://playwright.dev/java/docs/locators#strictness">locator strictness</a> violation.
    *
    * <p> <strong>Usage</strong>
    *
    * <p> Consider a scenario where you'd like to click on a "New email" button, but sometimes a security settings dialog shows up
    * instead. In this case, you can wait for either a "New email" button, or a dialog and act accordingly.
+   *
+   * <p> <strong>NOTE:</strong> If both "New email" button and security dialog appear on screen, the "or" locator will match both of them, possibly
+   * throwing the <a href="https://playwright.dev/java/docs/locators#strictness">"strict mode violation" error</a>. In this
+   * case, you can use {@link com.microsoft.playwright.Locator#first Locator.first()} to only match one of them.
    * <pre>{@code
    * Locator newEmail = page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("New"));
    * Locator dialog = page.getByText("Confirm security settings");
-   * assertThat(newEmail.or(dialog)).isVisible();
+   * assertThat(newEmail.or(dialog).first()).isVisible();
    * if (dialog.isVisible())
    *   page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Dismiss")).click();
    * newEmail.click();
@@ -4840,7 +4867,6 @@ public interface Locator {
    * unless {@code force} option is set. If the element is detached during the checks, the whole action is retried.</li>
    * <li> Scroll the element into view if needed.</li>
    * <li> Use {@link com.microsoft.playwright.Page#mouse Page.mouse()} to click in the center of the element.</li>
-   * <li> Wait for initiated navigations to either succeed or fail, unless {@code noWaitAfter} option is set.</li>
    * <li> Ensure that the element is now checked or unchecked. If not, this method throws.</li>
    * </ol>
    *
@@ -4871,7 +4897,6 @@ public interface Locator {
    * unless {@code force} option is set. If the element is detached during the checks, the whole action is retried.</li>
    * <li> Scroll the element into view if needed.</li>
    * <li> Use {@link com.microsoft.playwright.Page#mouse Page.mouse()} to click in the center of the element.</li>
-   * <li> Wait for initiated navigations to either succeed or fail, unless {@code noWaitAfter} option is set.</li>
    * <li> Ensure that the element is now checked or unchecked. If not, this method throws.</li>
    * </ol>
    *
@@ -5198,7 +5223,6 @@ public interface Locator {
    * <li> Scroll the element into view if needed.</li>
    * <li> Use {@link com.microsoft.playwright.Page#touchscreen Page.touchscreen()} to tap the center of the element, or the
    * specified {@code position}.</li>
-   * <li> Wait for initiated navigations to either succeed or fail, unless {@code noWaitAfter} option is set.</li>
    * </ol>
    *
    * <p> If the element is detached from the DOM at any moment during the action, this method throws.
@@ -5225,7 +5249,6 @@ public interface Locator {
    * <li> Scroll the element into view if needed.</li>
    * <li> Use {@link com.microsoft.playwright.Page#touchscreen Page.touchscreen()} to tap the center of the element, or the
    * specified {@code position}.</li>
-   * <li> Wait for initiated navigations to either succeed or fail, unless {@code noWaitAfter} option is set.</li>
    * </ol>
    *
    * <p> If the element is detached from the DOM at any moment during the action, this method throws.
@@ -5298,7 +5321,6 @@ public interface Locator {
    * force} option is set.</li>
    * <li> Scroll the element into view if needed.</li>
    * <li> Use {@link com.microsoft.playwright.Page#mouse Page.mouse()} to click in the center of the element.</li>
-   * <li> Wait for initiated navigations to either succeed or fail, unless {@code noWaitAfter} option is set.</li>
    * <li> Ensure that the element is now unchecked. If not, this method throws.</li>
    * </ol>
    *
@@ -5330,7 +5352,6 @@ public interface Locator {
    * force} option is set.</li>
    * <li> Scroll the element into view if needed.</li>
    * <li> Use {@link com.microsoft.playwright.Page#mouse Page.mouse()} to click in the center of the element.</li>
-   * <li> Wait for initiated navigations to either succeed or fail, unless {@code noWaitAfter} option is set.</li>
    * <li> Ensure that the element is now unchecked. If not, this method throws.</li>
    * </ol>
    *

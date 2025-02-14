@@ -24,9 +24,7 @@ import com.microsoft.playwright.ElementHandle;
 import com.microsoft.playwright.PlaywrightException;
 import com.microsoft.playwright.options.*;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.PrintStream;
+import java.io.*;
 import java.lang.reflect.Type;
 import java.math.BigInteger;
 import java.net.MalformedURLException;
@@ -35,10 +33,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZoneOffset;
+import java.time.*;
 import java.util.*;
 import java.util.regex.Pattern;
 
@@ -79,6 +74,7 @@ class Serialization {
   static final Gson jsonDataSerializer = new GsonBuilder().disableHtmlEscaping()
     .registerTypeAdapter(Date.class, new DateSerializer())
     .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeSerializer())
+    .registerTypeAdapter(OffsetDateTime.class, new OffsetDateTimeSerializer())
     .serializeNulls().create();
 
   static SerializedError serializeError(Throwable e) {
@@ -174,6 +170,14 @@ class Serialization {
         result.r = new SerializedValue.R();
         result.r.p = ((Pattern)value).pattern();
         result.r.f = toJsRegexFlags(((Pattern)value));
+      } else if (value instanceof Exception) {
+        Exception exception = (Exception) value;
+        result.e = new SerializedValue.E();
+        result.e.m = exception.getMessage();
+        result.e.n = exception.getClass().getSimpleName();
+        StringWriter sw = new StringWriter();
+        exception.printStackTrace(new PrintWriter(sw));
+        result.e.s = sw.toString();
       } else {
         HashableValue mapKey = new HashableValue(value);
         Integer id = valueToId.get(mapKey);
@@ -251,6 +255,9 @@ class Serialization {
       return (T)(Date.from(Instant.parse(value.d)));
     if (value.r != null)
       return (T)(Pattern.compile(value.r.p, fromJsRegexFlags(value.r.f)));
+    if (value.e != null) {
+      return (T)new Exception(value.e.s);
+    }
     if (value.v != null) {
       switch (value.v) {
         case "undefined":
@@ -307,6 +314,9 @@ class Serialization {
       }
       if (modifiers.contains(KeyboardModifier.CONTROL)) {
         result.add("Control");
+      }
+      if (modifiers.contains(KeyboardModifier.CONTROLORMETA)) {
+        result.add("ControlOrMeta");
       }
       if (modifiers.contains(KeyboardModifier.META)) {
         result.add("Meta");
@@ -516,6 +526,13 @@ class Serialization {
     @Override
     public JsonElement serialize(Date src, Type typeOfSrc, JsonSerializationContext context) {
       return new JsonPrimitive(dateFormat.format(src));
+    }
+  }
+
+  private static class OffsetDateTimeSerializer implements JsonSerializer<OffsetDateTime> {
+    @Override
+    public JsonElement serialize(OffsetDateTime src, Type typeOfSrc, JsonSerializationContext context) {
+      return new JsonPrimitive(dateFormat.format(Date.from(src.toInstant())));
     }
   }
 

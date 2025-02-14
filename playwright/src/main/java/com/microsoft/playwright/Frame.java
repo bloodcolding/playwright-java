@@ -72,7 +72,7 @@ public interface Frame {
      */
     public Path path;
     /**
-     * Script type. Use 'module' in order to load a Javascript ES6 module. See <a
+     * Script type. Use 'module' in order to load a JavaScript ES6 module. See <a
      * href="https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script">script</a> for more details.
      */
     public String type;
@@ -97,7 +97,7 @@ public interface Frame {
       return this;
     }
     /**
-     * Script type. Use 'module' in order to load a Javascript ES6 module. See <a
+     * Script type. Use 'module' in order to load a JavaScript ES6 module. See <a
      * href="https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script">script</a> for more details.
      */
     public AddScriptTagOptions setType(String type) {
@@ -157,9 +157,7 @@ public interface Frame {
      */
     public Boolean force;
     /**
-     * Actions that initiate navigations are waiting for these navigations to happen and for pages to start loading. You can
-     * opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to
-     * inaccessible pages. Defaults to {@code false}.
+     * @deprecated This option has no effect.
      */
     public Boolean noWaitAfter;
     /**
@@ -195,9 +193,7 @@ public interface Frame {
       return this;
     }
     /**
-     * Actions that initiate navigations are waiting for these navigations to happen and for pages to start loading. You can
-     * opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to
-     * inaccessible pages. Defaults to {@code false}.
+     * @deprecated This option has no effect.
      */
     public CheckOptions setNoWaitAfter(boolean noWaitAfter) {
       this.noWaitAfter = noWaitAfter;
@@ -271,9 +267,7 @@ public interface Frame {
      */
     public List<KeyboardModifier> modifiers;
     /**
-     * Actions that initiate navigations are waiting for these navigations to happen and for pages to start loading. You can
-     * opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to
-     * inaccessible pages. Defaults to {@code false}.
+     * @deprecated This option will default to {@code true} in the future.
      */
     public Boolean noWaitAfter;
     /**
@@ -296,7 +290,8 @@ public interface Frame {
     /**
      * When set, this method only performs the <a href="https://playwright.dev/java/docs/actionability">actionability</a>
      * checks and skips the action. Defaults to {@code false}. Useful to wait until the element is ready for the action without
-     * performing it.
+     * performing it. Note that keyboard {@code modifiers} will be pressed regardless of {@code trial} to allow testing
+     * elements which are only visible when those keys are pressed.
      */
     public Boolean trial;
 
@@ -339,9 +334,7 @@ public interface Frame {
       return this;
     }
     /**
-     * Actions that initiate navigations are waiting for these navigations to happen and for pages to start loading. You can
-     * opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to
-     * inaccessible pages. Defaults to {@code false}.
+     * @deprecated This option will default to {@code true} in the future.
      */
     public ClickOptions setNoWaitAfter(boolean noWaitAfter) {
       this.noWaitAfter = noWaitAfter;
@@ -383,7 +376,8 @@ public interface Frame {
     /**
      * When set, this method only performs the <a href="https://playwright.dev/java/docs/actionability">actionability</a>
      * checks and skips the action. Defaults to {@code false}. Useful to wait until the element is ready for the action without
-     * performing it.
+     * performing it. Note that keyboard {@code modifiers} will be pressed regardless of {@code trial} to allow testing
+     * elements which are only visible when those keys are pressed.
      */
     public ClickOptions setTrial(boolean trial) {
       this.trial = trial;
@@ -411,9 +405,7 @@ public interface Frame {
      */
     public List<KeyboardModifier> modifiers;
     /**
-     * Actions that initiate navigations are waiting for these navigations to happen and for pages to start loading. You can
-     * opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to
-     * inaccessible pages. Defaults to {@code false}.
+     * @deprecated This option has no effect.
      */
     public Boolean noWaitAfter;
     /**
@@ -436,7 +428,8 @@ public interface Frame {
     /**
      * When set, this method only performs the <a href="https://playwright.dev/java/docs/actionability">actionability</a>
      * checks and skips the action. Defaults to {@code false}. Useful to wait until the element is ready for the action without
-     * performing it.
+     * performing it. Note that keyboard {@code modifiers} will be pressed regardless of {@code trial} to allow testing
+     * elements which are only visible when those keys are pressed.
      */
     public Boolean trial;
 
@@ -472,9 +465,7 @@ public interface Frame {
       return this;
     }
     /**
-     * Actions that initiate navigations are waiting for these navigations to happen and for pages to start loading. You can
-     * opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to
-     * inaccessible pages. Defaults to {@code false}.
+     * @deprecated This option has no effect.
      */
     public DblclickOptions setNoWaitAfter(boolean noWaitAfter) {
       this.noWaitAfter = noWaitAfter;
@@ -516,7 +507,8 @@ public interface Frame {
     /**
      * When set, this method only performs the <a href="https://playwright.dev/java/docs/actionability">actionability</a>
      * checks and skips the action. Defaults to {@code false}. Useful to wait until the element is ready for the action without
-     * performing it.
+     * performing it. Note that keyboard {@code modifiers} will be pressed regardless of {@code trial} to allow testing
+     * elements which are only visible when those keys are pressed.
      */
     public DblclickOptions setTrial(boolean trial) {
       this.trial = trial;
@@ -563,9 +555,7 @@ public interface Frame {
      */
     public Boolean force;
     /**
-     * Actions that initiate navigations are waiting for these navigations to happen and for pages to start loading. You can
-     * opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to
-     * inaccessible pages. Defaults to {@code false}.
+     * @deprecated This option has no effect.
      */
     public Boolean noWaitAfter;
     /**
@@ -606,9 +596,7 @@ public interface Frame {
       return this;
     }
     /**
-     * Actions that initiate navigations are waiting for these navigations to happen and for pages to start loading. You can
-     * opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to
-     * inaccessible pages. Defaults to {@code false}.
+     * @deprecated This option has no effect.
      */
     public DragAndDropOptions setNoWaitAfter(boolean noWaitAfter) {
       this.noWaitAfter = noWaitAfter;
@@ -695,9 +683,7 @@ public interface Frame {
      */
     public Boolean force;
     /**
-     * Actions that initiate navigations are waiting for these navigations to happen and for pages to start loading. You can
-     * opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to
-     * inaccessible pages. Defaults to {@code false}.
+     * @deprecated This option has no effect.
      */
     public Boolean noWaitAfter;
     /**
@@ -722,9 +708,7 @@ public interface Frame {
       return this;
     }
     /**
-     * Actions that initiate navigations are waiting for these navigations to happen and for pages to start loading. You can
-     * opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to
-     * inaccessible pages. Defaults to {@code false}.
+     * @deprecated This option has no effect.
      */
     public FillOptions setNoWaitAfter(boolean noWaitAfter) {
       this.noWaitAfter = noWaitAfter;
@@ -1124,9 +1108,7 @@ public interface Frame {
      */
     public List<KeyboardModifier> modifiers;
     /**
-     * Actions that initiate navigations are waiting for these navigations to happen and for pages to start loading. You can
-     * opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to
-     * inaccessible pages. Defaults to {@code false}.
+     * @deprecated This option has no effect.
      */
     public Boolean noWaitAfter;
     /**
@@ -1149,7 +1131,8 @@ public interface Frame {
     /**
      * When set, this method only performs the <a href="https://playwright.dev/java/docs/actionability">actionability</a>
      * checks and skips the action. Defaults to {@code false}. Useful to wait until the element is ready for the action without
-     * performing it.
+     * performing it. Note that keyboard {@code modifiers} will be pressed regardless of {@code trial} to allow testing
+     * elements which are only visible when those keys are pressed.
      */
     public Boolean trial;
 
@@ -1171,9 +1154,7 @@ public interface Frame {
       return this;
     }
     /**
-     * Actions that initiate navigations are waiting for these navigations to happen and for pages to start loading. You can
-     * opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to
-     * inaccessible pages. Defaults to {@code false}.
+     * @deprecated This option has no effect.
      */
     public HoverOptions setNoWaitAfter(boolean noWaitAfter) {
       this.noWaitAfter = noWaitAfter;
@@ -1215,7 +1196,8 @@ public interface Frame {
     /**
      * When set, this method only performs the <a href="https://playwright.dev/java/docs/actionability">actionability</a>
      * checks and skips the action. Defaults to {@code false}. Useful to wait until the element is ready for the action without
-     * performing it.
+     * performing it. Note that keyboard {@code modifiers} will be pressed regardless of {@code trial} to allow testing
+     * elements which are only visible when those keys are pressed.
      */
     public HoverOptions setTrial(boolean trial) {
       this.trial = trial;
@@ -1613,9 +1595,7 @@ public interface Frame {
      */
     public Double delay;
     /**
-     * Actions that initiate navigations are waiting for these navigations to happen and for pages to start loading. You can
-     * opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to
-     * inaccessible pages. Defaults to {@code false}.
+     * @deprecated This option will default to {@code true} in the future.
      */
     public Boolean noWaitAfter;
     /**
@@ -1639,9 +1619,7 @@ public interface Frame {
       return this;
     }
     /**
-     * Actions that initiate navigations are waiting for these navigations to happen and for pages to start loading. You can
-     * opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to
-     * inaccessible pages. Defaults to {@code false}.
+     * @deprecated This option will default to {@code true} in the future.
      */
     public PressOptions setNoWaitAfter(boolean noWaitAfter) {
       this.noWaitAfter = noWaitAfter;
@@ -1689,9 +1667,7 @@ public interface Frame {
      */
     public Boolean force;
     /**
-     * Actions that initiate navigations are waiting for these navigations to happen and for pages to start loading. You can
-     * opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to
-     * inaccessible pages. Defaults to {@code false}.
+     * @deprecated This option has no effect.
      */
     public Boolean noWaitAfter;
     /**
@@ -1716,9 +1692,7 @@ public interface Frame {
       return this;
     }
     /**
-     * Actions that initiate navigations are waiting for these navigations to happen and for pages to start loading. You can
-     * opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to
-     * inaccessible pages. Defaults to {@code false}.
+     * @deprecated This option has no effect.
      */
     public SelectOptionOptions setNoWaitAfter(boolean noWaitAfter) {
       this.noWaitAfter = noWaitAfter;
@@ -1750,9 +1724,7 @@ public interface Frame {
      */
     public Boolean force;
     /**
-     * Actions that initiate navigations are waiting for these navigations to happen and for pages to start loading. You can
-     * opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to
-     * inaccessible pages. Defaults to {@code false}.
+     * @deprecated This option has no effect.
      */
     public Boolean noWaitAfter;
     /**
@@ -1788,9 +1760,7 @@ public interface Frame {
       return this;
     }
     /**
-     * Actions that initiate navigations are waiting for these navigations to happen and for pages to start loading. You can
-     * opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to
-     * inaccessible pages. Defaults to {@code false}.
+     * @deprecated This option has no effect.
      */
     public SetCheckedOptions setNoWaitAfter(boolean noWaitAfter) {
       this.noWaitAfter = noWaitAfter;
@@ -1890,9 +1860,7 @@ public interface Frame {
   }
   class SetInputFilesOptions {
     /**
-     * Actions that initiate navigations are waiting for these navigations to happen and for pages to start loading. You can
-     * opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to
-     * inaccessible pages. Defaults to {@code false}.
+     * @deprecated This option has no effect.
      */
     public Boolean noWaitAfter;
     /**
@@ -1909,9 +1877,7 @@ public interface Frame {
     public Double timeout;
 
     /**
-     * Actions that initiate navigations are waiting for these navigations to happen and for pages to start loading. You can
-     * opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to
-     * inaccessible pages. Defaults to {@code false}.
+     * @deprecated This option has no effect.
      */
     public SetInputFilesOptions setNoWaitAfter(boolean noWaitAfter) {
       this.noWaitAfter = noWaitAfter;
@@ -1949,9 +1915,7 @@ public interface Frame {
      */
     public List<KeyboardModifier> modifiers;
     /**
-     * Actions that initiate navigations are waiting for these navigations to happen and for pages to start loading. You can
-     * opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to
-     * inaccessible pages. Defaults to {@code false}.
+     * @deprecated This option has no effect.
      */
     public Boolean noWaitAfter;
     /**
@@ -1974,7 +1938,8 @@ public interface Frame {
     /**
      * When set, this method only performs the <a href="https://playwright.dev/java/docs/actionability">actionability</a>
      * checks and skips the action. Defaults to {@code false}. Useful to wait until the element is ready for the action without
-     * performing it.
+     * performing it. Note that keyboard {@code modifiers} will be pressed regardless of {@code trial} to allow testing
+     * elements which are only visible when those keys are pressed.
      */
     public Boolean trial;
 
@@ -1996,9 +1961,7 @@ public interface Frame {
       return this;
     }
     /**
-     * Actions that initiate navigations are waiting for these navigations to happen and for pages to start loading. You can
-     * opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to
-     * inaccessible pages. Defaults to {@code false}.
+     * @deprecated This option has no effect.
      */
     public TapOptions setNoWaitAfter(boolean noWaitAfter) {
       this.noWaitAfter = noWaitAfter;
@@ -2040,7 +2003,8 @@ public interface Frame {
     /**
      * When set, this method only performs the <a href="https://playwright.dev/java/docs/actionability">actionability</a>
      * checks and skips the action. Defaults to {@code false}. Useful to wait until the element is ready for the action without
-     * performing it.
+     * performing it. Note that keyboard {@code modifiers} will be pressed regardless of {@code trial} to allow testing
+     * elements which are only visible when those keys are pressed.
      */
     public TapOptions setTrial(boolean trial) {
       this.trial = trial;
@@ -2086,9 +2050,7 @@ public interface Frame {
      */
     public Double delay;
     /**
-     * Actions that initiate navigations are waiting for these navigations to happen and for pages to start loading. You can
-     * opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to
-     * inaccessible pages. Defaults to {@code false}.
+     * @deprecated This option has no effect.
      */
     public Boolean noWaitAfter;
     /**
@@ -2112,9 +2074,7 @@ public interface Frame {
       return this;
     }
     /**
-     * Actions that initiate navigations are waiting for these navigations to happen and for pages to start loading. You can
-     * opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to
-     * inaccessible pages. Defaults to {@code false}.
+     * @deprecated This option has no effect.
      */
     public TypeOptions setNoWaitAfter(boolean noWaitAfter) {
       this.noWaitAfter = noWaitAfter;
@@ -2146,9 +2106,7 @@ public interface Frame {
      */
     public Boolean force;
     /**
-     * Actions that initiate navigations are waiting for these navigations to happen and for pages to start loading. You can
-     * opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to
-     * inaccessible pages. Defaults to {@code false}.
+     * @deprecated This option has no effect.
      */
     public Boolean noWaitAfter;
     /**
@@ -2184,9 +2142,7 @@ public interface Frame {
       return this;
     }
     /**
-     * Actions that initiate navigations are waiting for these navigations to happen and for pages to start loading. You can
-     * opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to
-     * inaccessible pages. Defaults to {@code false}.
+     * @deprecated This option has no effect.
      */
     public UncheckOptions setNoWaitAfter(boolean noWaitAfter) {
       this.noWaitAfter = noWaitAfter;
@@ -2531,7 +2487,6 @@ public interface Frame {
    * unless {@code force} option is set. If the element is detached during the checks, the whole action is retried.</li>
    * <li> Scroll the element into view if needed.</li>
    * <li> Use {@link com.microsoft.playwright.Page#mouse Page.mouse()} to click in the center of the element.</li>
-   * <li> Wait for initiated navigations to either succeed or fail, unless {@code noWaitAfter} option is set.</li>
    * <li> Ensure that the element is now checked. If not, this method throws.</li>
    * </ol>
    *
@@ -2554,7 +2509,6 @@ public interface Frame {
    * unless {@code force} option is set. If the element is detached during the checks, the whole action is retried.</li>
    * <li> Scroll the element into view if needed.</li>
    * <li> Use {@link com.microsoft.playwright.Page#mouse Page.mouse()} to click in the center of the element.</li>
-   * <li> Wait for initiated navigations to either succeed or fail, unless {@code noWaitAfter} option is set.</li>
    * <li> Ensure that the element is now checked. If not, this method throws.</li>
    * </ol>
    *
@@ -2625,9 +2579,8 @@ public interface Frame {
    * unless {@code force} option is set. If the element is detached during the checks, the whole action is retried.</li>
    * <li> Scroll the element into view if needed.</li>
    * <li> Use {@link com.microsoft.playwright.Page#mouse Page.mouse()} to double click in the center of the element, or the
-   * specified {@code position}.</li>
-   * <li> Wait for initiated navigations to either succeed or fail, unless {@code noWaitAfter} option is set. Note that if the
-   * first click of the {@code dblclick()} triggers a navigation event, this method will throw.</li>
+   * specified {@code position}. if the first click of the {@code dblclick()} triggers a navigation event, this method will
+   * throw.</li>
    * </ol>
    *
    * <p> When all steps combined have not finished during the specified {@code timeout}, this method throws a {@code
@@ -2649,9 +2602,8 @@ public interface Frame {
    * unless {@code force} option is set. If the element is detached during the checks, the whole action is retried.</li>
    * <li> Scroll the element into view if needed.</li>
    * <li> Use {@link com.microsoft.playwright.Page#mouse Page.mouse()} to double click in the center of the element, or the
-   * specified {@code position}.</li>
-   * <li> Wait for initiated navigations to either succeed or fail, unless {@code noWaitAfter} option is set. Note that if the
-   * first click of the {@code dblclick()} triggers a navigation event, this method will throw.</li>
+   * specified {@code position}. if the first click of the {@code dblclick()} triggers a navigation event, this method will
+   * throw.</li>
    * </ol>
    *
    * <p> When all steps combined have not finished during the specified {@code timeout}, this method throws a {@code
@@ -3547,19 +3499,19 @@ public interface Frame {
    * <p> You can locate by text substring, exact string, or a regular expression:
    * <pre>{@code
    * // Matches <span>
-   * page.getByText("world")
+   * page.getByText("world");
    *
    * // Matches first <div>
-   * page.getByText("Hello world")
+   * page.getByText("Hello world");
    *
    * // Matches second <div>
-   * page.getByText("Hello", new Page.GetByTextOptions().setExact(true))
+   * page.getByText("Hello", new Page.GetByTextOptions().setExact(true));
    *
    * // Matches both <div>s
-   * page.getByText(Pattern.compile("Hello"))
+   * page.getByText(Pattern.compile("Hello"));
    *
    * // Matches second <div>
-   * page.getByText(Pattern.compile("^hello$", Pattern.CASE_INSENSITIVE))
+   * page.getByText(Pattern.compile("^hello$", Pattern.CASE_INSENSITIVE));
    * }</pre>
    *
    * <p> <strong>Details</strong>
@@ -3589,19 +3541,19 @@ public interface Frame {
    * <p> You can locate by text substring, exact string, or a regular expression:
    * <pre>{@code
    * // Matches <span>
-   * page.getByText("world")
+   * page.getByText("world");
    *
    * // Matches first <div>
-   * page.getByText("Hello world")
+   * page.getByText("Hello world");
    *
    * // Matches second <div>
-   * page.getByText("Hello", new Page.GetByTextOptions().setExact(true))
+   * page.getByText("Hello", new Page.GetByTextOptions().setExact(true));
    *
    * // Matches both <div>s
-   * page.getByText(Pattern.compile("Hello"))
+   * page.getByText(Pattern.compile("Hello"));
    *
    * // Matches second <div>
-   * page.getByText(Pattern.compile("^hello$", Pattern.CASE_INSENSITIVE))
+   * page.getByText(Pattern.compile("^hello$", Pattern.CASE_INSENSITIVE));
    * }</pre>
    *
    * <p> <strong>Details</strong>
@@ -3629,19 +3581,19 @@ public interface Frame {
    * <p> You can locate by text substring, exact string, or a regular expression:
    * <pre>{@code
    * // Matches <span>
-   * page.getByText("world")
+   * page.getByText("world");
    *
    * // Matches first <div>
-   * page.getByText("Hello world")
+   * page.getByText("Hello world");
    *
    * // Matches second <div>
-   * page.getByText("Hello", new Page.GetByTextOptions().setExact(true))
+   * page.getByText("Hello", new Page.GetByTextOptions().setExact(true));
    *
    * // Matches both <div>s
-   * page.getByText(Pattern.compile("Hello"))
+   * page.getByText(Pattern.compile("Hello"));
    *
    * // Matches second <div>
-   * page.getByText(Pattern.compile("^hello$", Pattern.CASE_INSENSITIVE))
+   * page.getByText(Pattern.compile("^hello$", Pattern.CASE_INSENSITIVE));
    * }</pre>
    *
    * <p> <strong>Details</strong>
@@ -3671,19 +3623,19 @@ public interface Frame {
    * <p> You can locate by text substring, exact string, or a regular expression:
    * <pre>{@code
    * // Matches <span>
-   * page.getByText("world")
+   * page.getByText("world");
    *
    * // Matches first <div>
-   * page.getByText("Hello world")
+   * page.getByText("Hello world");
    *
    * // Matches second <div>
-   * page.getByText("Hello", new Page.GetByTextOptions().setExact(true))
+   * page.getByText("Hello", new Page.GetByTextOptions().setExact(true));
    *
    * // Matches both <div>s
-   * page.getByText(Pattern.compile("Hello"))
+   * page.getByText(Pattern.compile("Hello"));
    *
    * // Matches second <div>
-   * page.getByText(Pattern.compile("^hello$", Pattern.CASE_INSENSITIVE))
+   * page.getByText(Pattern.compile("^hello$", Pattern.CASE_INSENSITIVE));
    * }</pre>
    *
    * <p> <strong>Details</strong>
@@ -3831,7 +3783,6 @@ public interface Frame {
    * <li> Scroll the element into view if needed.</li>
    * <li> Use {@link com.microsoft.playwright.Page#mouse Page.mouse()} to hover over the center of the element, or the specified
    * {@code position}.</li>
-   * <li> Wait for initiated navigations to either succeed or fail, unless {@code noWaitAfter} option is set.</li>
    * </ol>
    *
    * <p> When all steps combined have not finished during the specified {@code timeout}, this method throws a {@code
@@ -3852,7 +3803,6 @@ public interface Frame {
    * <li> Scroll the element into view if needed.</li>
    * <li> Use {@link com.microsoft.playwright.Page#mouse Page.mouse()} to hover over the center of the element, or the specified
    * {@code position}.</li>
-   * <li> Wait for initiated navigations to either succeed or fail, unless {@code noWaitAfter} option is set.</li>
    * </ol>
    *
    * <p> When all steps combined have not finished during the specified {@code timeout}, this method throws a {@code
@@ -4568,7 +4518,6 @@ public interface Frame {
    * unless {@code force} option is set. If the element is detached during the checks, the whole action is retried.</li>
    * <li> Scroll the element into view if needed.</li>
    * <li> Use {@link com.microsoft.playwright.Page#mouse Page.mouse()} to click in the center of the element.</li>
-   * <li> Wait for initiated navigations to either succeed or fail, unless {@code noWaitAfter} option is set.</li>
    * <li> Ensure that the element is now checked or unchecked. If not, this method throws.</li>
    * </ol>
    *
@@ -4592,7 +4541,6 @@ public interface Frame {
    * unless {@code force} option is set. If the element is detached during the checks, the whole action is retried.</li>
    * <li> Scroll the element into view if needed.</li>
    * <li> Use {@link com.microsoft.playwright.Page#mouse Page.mouse()} to click in the center of the element.</li>
-   * <li> Wait for initiated navigations to either succeed or fail, unless {@code noWaitAfter} option is set.</li>
    * <li> Ensure that the element is now checked or unchecked. If not, this method throws.</li>
    * </ol>
    *
@@ -4753,7 +4701,6 @@ public interface Frame {
    * <li> Scroll the element into view if needed.</li>
    * <li> Use {@link com.microsoft.playwright.Page#touchscreen Page.touchscreen()} to tap the center of the element, or the
    * specified {@code position}.</li>
-   * <li> Wait for initiated navigations to either succeed or fail, unless {@code noWaitAfter} option is set.</li>
    * </ol>
    *
    * <p> When all steps combined have not finished during the specified {@code timeout}, this method throws a {@code
@@ -4776,7 +4723,6 @@ public interface Frame {
    * <li> Scroll the element into view if needed.</li>
    * <li> Use {@link com.microsoft.playwright.Page#touchscreen Page.touchscreen()} to tap the center of the element, or the
    * specified {@code position}.</li>
-   * <li> Wait for initiated navigations to either succeed or fail, unless {@code noWaitAfter} option is set.</li>
    * </ol>
    *
    * <p> When all steps combined have not finished during the specified {@code timeout}, this method throws a {@code
@@ -4842,7 +4788,6 @@ public interface Frame {
    * unless {@code force} option is set. If the element is detached during the checks, the whole action is retried.</li>
    * <li> Scroll the element into view if needed.</li>
    * <li> Use {@link com.microsoft.playwright.Page#mouse Page.mouse()} to click in the center of the element.</li>
-   * <li> Wait for initiated navigations to either succeed or fail, unless {@code noWaitAfter} option is set.</li>
    * <li> Ensure that the element is now unchecked. If not, this method throws.</li>
    * </ol>
    *
@@ -4865,7 +4810,6 @@ public interface Frame {
    * unless {@code force} option is set. If the element is detached during the checks, the whole action is retried.</li>
    * <li> Scroll the element into view if needed.</li>
    * <li> Use {@link com.microsoft.playwright.Page#mouse Page.mouse()} to click in the center of the element.</li>
-   * <li> Wait for initiated navigations to either succeed or fail, unless {@code noWaitAfter} option is set.</li>
    * <li> Ensure that the element is now unchecked. If not, this method throws.</li>
    * </ol>
    *

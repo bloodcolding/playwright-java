@@ -28,6 +28,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.text.ParseException;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
@@ -131,7 +132,7 @@ public class TestBrowserContextFetch extends TestBase {
     context.request().get(server.EMPTY_PAGE + "?p1=foo",
       RequestOptions.create().setQueryParam("p1", "v1").setQueryParam("парам2", "знач2"));
     assertNotNull(req.get());
-    assertEquals("/empty.html?p1=v1&%D0%BF%D0%B0%D1%80%D0%B0%D0%BC2=%D0%B7%D0%BD%D0%B0%D1%872", req.get().url);
+    assertEquals("/empty.html?p1=foo&p1=v1&%D0%BF%D0%B0%D1%80%D0%B0%D0%BC2=%D0%B7%D0%BD%D0%B0%D1%872", req.get().url);
   }
 
   ;
@@ -217,7 +218,7 @@ public class TestBrowserContextFetch extends TestBase {
         writer.write("<title>Served by the proxy</title>");
       }
     });
-    try (Browser browser = browserType.launch(new BrowserType.LaunchOptions().setProxy("http://per-context"))) {
+    try (Browser browser = browserType.launch()) {
       BrowserContext context = browser.newContext(new Browser.NewContextOptions().setProxy("localhost:" + server.PORT));
       Future<Server.Request> request = server.futureRequest("/target.html");
       APIResponse response = context.request().get("http://non-existent.com/target.html");
@@ -519,6 +520,16 @@ public class TestBrowserContextFetch extends TestBase {
     context.request().fetch(pageReq, RequestOptions.create().setMethod("POST").setData(testData));
     assertEquals("{\"name\":\"foo\",\"localDateTime\":\"2022-12-23T06:14:58.818Z\",\"date\":\"2022-12-23T06:14:58.818Z\",\"nullLocalDateTime\":null,\"nullDate\":null}",
       new String(req.get().postBody));
+  }
+
+  @Test
+  void shouldSupportOffsetDateTimeInData() throws ExecutionException, InterruptedException {
+    APIRequestContext request = playwright.request().newContext();
+    OffsetDateTime offsetDateTime = OffsetDateTime.parse("2024-07-10T10:15:30-08:00");
+    Future<Server.Request> serverRequest = server.futureRequest("/empty.html");
+    request.get(server.EMPTY_PAGE, RequestOptions.create().setData(mapOf("date", offsetDateTime)));
+    byte[] body = serverRequest.get().postBody;
+    assertEquals("{\"date\":\"2024-07-10T18:15:30.000Z\"}", new String(body));
   }
 
   @Test
@@ -853,5 +864,29 @@ public class TestBrowserContextFetch extends TestBase {
     context.close(new BrowserContext.CloseOptions().setReason("Test ended."));
     PlaywrightException e = assertThrows(PlaywrightException.class, () -> context.request().get(server.EMPTY_PAGE));
     assertTrue(e.getMessage().contains("Test ended."), e.getMessage());
+  }
+
+  @Test
+  public void shouldRetryECONNRESET() {
+    int[] requestCount = {0};
+    server.setRoute("/test", exchange -> {
+      if (requestCount[0]++ < 3) {
+        exchange.close();
+        return;
+      }
+      exchange.getResponseHeaders().add("Content-Type", "text/plain");
+      exchange.sendResponseHeaders(200, 0);
+      try (OutputStreamWriter writer = new OutputStreamWriter(exchange.getResponseBody())) {
+        writer.write("Hello!");
+      }
+    });
+
+    APIRequestContext requestContext = context.request();
+    APIResponse response = requestContext.get(server.PREFIX + "/test",
+      RequestOptions.create().setMaxRetries(3));
+
+    assertEquals(200, response.status());
+    assertEquals("Hello!", response.text());
+    assertEquals(4, requestCount[0]);
   }
 }

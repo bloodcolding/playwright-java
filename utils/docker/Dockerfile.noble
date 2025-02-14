@@ -1,15 +1,15 @@
-FROM ubuntu:focal
+FROM ubuntu:noble
 
 ARG DEBIAN_FRONTEND=noninteractive
 ARG TZ=America/Los_Angeles
-ARG DOCKER_IMAGE_NAME_TEMPLATE="mcr.microsoft.com/playwright/java:v%version%-focal"
+ARG DOCKER_IMAGE_NAME_TEMPLATE="mcr.microsoft.com/playwright/java:v%version%-noble"
 
 # === INSTALL JDK and Maven ===
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends openjdk-21-jdk \
     # Install utilities required for downloading browsers
-    curl \
+    wget \
     # Install utilities required for downloading driver
     unzip \
     # For the MSEdge install script
@@ -21,7 +21,7 @@ RUN apt-get update && \
 # Ubuntu 22.04 and earlier come with Maven 3.6.3 which fails with
 # Java 21, so we install latest Maven from Apache instead.
 RUN VERSION=3.9.6 && \
-    curl -o - https://archive.apache.org/dist/maven/maven-3/$VERSION/binaries/apache-maven-$VERSION-bin.tar.gz | tar zxfv - -C /opt/ && \
+    wget -O - https://archive.apache.org/dist/maven/maven-3/$VERSION/binaries/apache-maven-$VERSION-bin.tar.gz | tar zxfv - -C /opt/ && \
     ln -s /opt/apache-maven-$VERSION/bin/mvn /usr/local/bin/
 
 ARG PW_TARGET_ARCH
@@ -41,7 +41,7 @@ RUN mkdir /ms-playwright && \
 COPY . /tmp/pw-java
 
 RUN cd /tmp/pw-java && \
-    ./scripts/download_driver_for_all_platforms.sh && \
+    ./scripts/download_driver.sh && \
     mvn install -D skipTests --no-transfer-progress && \
     DEBIAN_FRONTEND=noninteractive mvn exec:java -e -D exec.mainClass=com.microsoft.playwright.CLI \
                      -D exec.args="install-deps" -f playwright/pom.xml --no-transfer-progress && \
