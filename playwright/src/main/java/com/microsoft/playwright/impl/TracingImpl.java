@@ -45,7 +45,7 @@ class TracingImpl extends ChannelOwner implements Tracing {
     // Not interested in artifacts.
     if (path == null) {
       params.addProperty("mode", "discard");
-      sendMessage("tracingStopChunk", params);
+      sendMessage("tracingStopChunk", params, NO_TIMEOUT);
       if (stacksId != null) {
         connection.localUtils().traceDiscarded(stacksId);
       }
@@ -55,14 +55,14 @@ class TracingImpl extends ChannelOwner implements Tracing {
     boolean isLocal = !connection.isRemote;
     if (isLocal) {
       params.addProperty("mode", "entries");
-      JsonObject json = sendMessage("tracingStopChunk", params).getAsJsonObject();
+      JsonObject json = sendMessage("tracingStopChunk", params, NO_TIMEOUT).getAsJsonObject();
       JsonArray entries = json.getAsJsonArray("entries");
       connection.localUtils.zip(path, entries, stacksId, false, includeSources);
       return;
     }
 
     params.addProperty("mode", "archive");
-    JsonObject json = sendMessage("tracingStopChunk", params).getAsJsonObject();
+    JsonObject json = sendMessage("tracingStopChunk", params, NO_TIMEOUT).getAsJsonObject();
     // The artifact may be missing if the browser closed while stopping tracing.
     if (!json.has("artifact")) {
       if (stacksId != null) {
@@ -85,6 +85,25 @@ class TracingImpl extends ChannelOwner implements Tracing {
     tracingStartChunk(options.name, options.title);
   }
 
+  @Override
+  public void group(String name, GroupOptions options) {
+    groupImpl(name, options);
+  }
+
+  private void groupImpl(String name, GroupOptions options) {
+    if (options == null) {
+      options = new GroupOptions();
+    }
+    JsonObject params = gson().toJsonTree(options).getAsJsonObject();
+    params.addProperty("name", name);
+    sendMessage("tracingGroup", params, NO_TIMEOUT);
+  }
+
+  @Override
+  public void groupEnd() {
+    sendMessage("tracingGroupEnd");
+  }
+
   private void tracingStartChunk(String name, String title) {
     JsonObject params = new JsonObject();
     if (name != null) {
@@ -93,7 +112,7 @@ class TracingImpl extends ChannelOwner implements Tracing {
     if (title != null) {
       params.addProperty("title", title);
     }
-    JsonObject result = sendMessage("tracingStartChunk", params).getAsJsonObject();
+    JsonObject result = sendMessage("tracingStartChunk", params, NO_TIMEOUT).getAsJsonObject();
     startCollectingStacks(result.get("traceName").getAsString());
   }
 
@@ -115,7 +134,7 @@ class TracingImpl extends ChannelOwner implements Tracing {
     if (includeSources) {
       params.addProperty("sources", true);
     }
-    sendMessage("tracingStart", params);
+    sendMessage("tracingStart", params, NO_TIMEOUT);
     tracingStartChunk(options.name, options.title);
   }
 

@@ -59,11 +59,22 @@ public interface APIRequestContext {
   }
   class StorageStateOptions {
     /**
+     * Set to {@code true} to include IndexedDB in the storage state snapshot.
+     */
+    public Boolean indexedDB;
+    /**
      * The file path to save the storage state to. If {@code path} is a relative path, then it is resolved relative to current
      * working directory. If no path is provided, storage state is still returned, but won't be saved to the disk.
      */
     public Path path;
 
+    /**
+     * Set to {@code true} to include IndexedDB in the storage state snapshot.
+     */
+    public StorageStateOptions setIndexedDB(boolean indexedDB) {
+      this.indexedDB = indexedDB;
+      return this;
+    }
     /**
      * The file path to save the storage state to. If {@code path} is a relative path, then it is resolved relative to current
      * working directory. If no path is provided, storage state is still returned, but won't be saved to the disk.
@@ -129,8 +140,7 @@ public interface APIRequestContext {
    * }</pre>
    *
    * <p> The common way to send file(s) in the body of a request is to upload them as form fields with {@code
-   * multipart/form-data} encoding. Use {@code FormData} to construct request body and pass it to the request as {@code
-   * multipart} parameter:
+   * multipart/form-data} encoding, by specifiying the {@code multipart} parameter:
    * <pre>{@code
    * // Pass file path to the form data constructor:
    * Path file = Paths.get("team.csv");
@@ -167,8 +177,7 @@ public interface APIRequestContext {
    * }</pre>
    *
    * <p> The common way to send file(s) in the body of a request is to upload them as form fields with {@code
-   * multipart/form-data} encoding. Use {@code FormData} to construct request body and pass it to the request as {@code
-   * multipart} parameter:
+   * multipart/form-data} encoding, by specifiying the {@code multipart} parameter:
    * <pre>{@code
    * // Pass file path to the form data constructor:
    * Path file = Paths.get("team.csv");
@@ -204,8 +213,7 @@ public interface APIRequestContext {
    * }</pre>
    *
    * <p> The common way to send file(s) in the body of a request is to upload them as form fields with {@code
-   * multipart/form-data} encoding. Use {@code FormData} to construct request body and pass it to the request as {@code
-   * multipart} parameter:
+   * multipart/form-data} encoding, by specifiying the {@code multipart} parameter:
    * <pre>{@code
    * // Pass file path to the form data constructor:
    * Path file = Paths.get("team.csv");
@@ -242,8 +250,7 @@ public interface APIRequestContext {
    * }</pre>
    *
    * <p> The common way to send file(s) in the body of a request is to upload them as form fields with {@code
-   * multipart/form-data} encoding. Use {@code FormData} to construct request body and pass it to the request as {@code
-   * multipart} parameter:
+   * multipart/form-data} encoding, by specifiying the {@code multipart} parameter:
    * <pre>{@code
    * // Pass file path to the form data constructor:
    * Path file = Paths.get("team.csv");

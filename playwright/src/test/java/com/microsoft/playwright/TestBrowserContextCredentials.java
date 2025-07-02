@@ -25,12 +25,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class TestBrowserContextCredentials extends TestBase {
 
-  static boolean isChromiumHeadful() {
-    return isChromium() && isHeadful();
+  static boolean isChromiumHeadedLike() {
+    // --headless=new, the default in all Chromium channels, is like headless.
+    return isChromium() && (isHeadful() || getBrowserChannelFromEnv() != null);
   }
 
   @Test
-  @DisabledIf(value="isChromiumHeadful", disabledReason="fail")
+  @DisabledIf(value="isChromiumHeadedLike", disabledReason="fail")
   void shouldFailWithoutCredentials() {
     server.setAuth("/empty.html", "user", "pass");
     Response response = page.navigate(server.EMPTY_PAGE);
@@ -103,6 +104,7 @@ public class TestBrowserContextCredentials extends TestBase {
   }
 
   @Test
+  @DisabledIf(value="isChromiumHeadedLike", disabledReason="fail")
   void shouldFailWithCorrectCredentialsAndWrongOriginScheme() {
     server.setAuth("/empty.html", "user", "pass");
     final HttpCredentials httpCredentials = new HttpCredentials("user", "pass");
@@ -115,6 +117,7 @@ public class TestBrowserContextCredentials extends TestBase {
   }
 
   @Test
+  @DisabledIf(value="isChromiumHeadedLike", disabledReason="fail")
   void shouldFailWithCorrectCredentialsAndWrongOriginHostname() {
     server.setAuth("/empty.html", "user", "pass");
     final HttpCredentials httpCredentials = new HttpCredentials("user", "pass");
@@ -127,6 +130,7 @@ public class TestBrowserContextCredentials extends TestBase {
   }
 
   @Test
+  @DisabledIf(value="isChromiumHeadedLike", disabledReason="fail")
   void shouldFailWithCorrectCredentialsAndWrongOriginPort() {
     server.setAuth("/empty.html", "user", "pass");
     final HttpCredentials httpCredentials = new HttpCredentials("user", "pass");

@@ -18,10 +18,12 @@ package com.microsoft.playwright;
 
 import com.microsoft.playwright.assertions.LocatorAssertions;
 import com.microsoft.playwright.assertions.PlaywrightAssertions;
-import org.junit.jupiter.api.Disabled;
+import com.microsoft.playwright.assertions.LocatorAssertions.ContainsClassOptions;
+
 import org.junit.jupiter.api.Test;
 import org.opentest4j.AssertionFailedError;
 
+import static java.util.Arrays.asList;
 import java.util.regex.Pattern;
 
 import static com.microsoft.playwright.Utils.mapOf;
@@ -657,9 +659,9 @@ public class TestLocatorAssertions extends TestBase {
     AssertionFailedError e = assertThrows(AssertionFailedError.class, () -> {
       assertThat(locator).isChecked(new LocatorAssertions.IsCheckedOptions().setTimeout(1000));
     });
-    assertNull(e.getExpected());
-    assertNull(e.getActual());
-    assertTrue(e.getMessage().contains("Locator expected to be checked"), e.getMessage());
+    assertEquals("checked", e.getExpected().getStringRepresentation());
+    assertEquals("unchecked", e.getActual().getStringRepresentation());
+    assertTrue(e.getMessage().contains("Locator expected to be: checked"), e.getMessage());
   }
 
   @Test
@@ -669,9 +671,10 @@ public class TestLocatorAssertions extends TestBase {
     AssertionFailedError e = assertThrows(AssertionFailedError.class, () -> {
       assertThat(locator).not().isChecked(new LocatorAssertions.IsCheckedOptions().setTimeout(1000));
     });
-    assertNull(e.getExpected());
-    assertNull(e.getActual());
-    assertTrue(e.getMessage().contains("Locator expected not to be checked"), e.getMessage());
+
+    assertEquals("checked", e.getExpected().getStringRepresentation());
+    assertEquals("checked", e.getActual().getStringRepresentation());
+    assertTrue(e.getMessage().contains("Locator expected not to be: checked"), e.getMessage());
   }
 
   @Test
@@ -687,7 +690,7 @@ public class TestLocatorAssertions extends TestBase {
     Locator locator = page.locator("input");
     AssertionFailedError error = assertThrows(AssertionFailedError.class,
       () -> assertThat(locator).isChecked(new LocatorAssertions.IsCheckedOptions().setChecked(false).setTimeout(1000)));
-    assertTrue(error.getMessage().contains("Locator expected to be unchecked"), error.getMessage());
+    assertTrue(error.getMessage().contains("Locator expected to be: unchecked"), error.getMessage());
   }
 
   @Test
@@ -787,6 +790,14 @@ public class TestLocatorAssertions extends TestBase {
     page.setContent("<input></input>");
     Locator locator = page.locator("input");
     assertThat(locator).not().isEditable(new LocatorAssertions.IsEditableOptions().setEditable(false));
+  }
+
+  @Test
+  void isEditableThrowsOnNonInputElement() {
+    page.setContent("<button>");
+    Locator locator = page.locator("button");
+    PlaywrightException e = assertThrows(PlaywrightException.class, () -> assertThat(locator).isEditable());
+    assertTrue(e.getMessage().contains("Element is not an <input>, <textarea>, <select> or [contenteditable] and does not have a role allowing [aria-readonly]"), e.getMessage());
   }
 
   @Test
@@ -1059,7 +1070,7 @@ public class TestLocatorAssertions extends TestBase {
     Locator locator = page.locator("div");
     PlaywrightAssertions.setDefaultAssertionTimeout(1000);
     AssertionFailedError exception = assertThrows(AssertionFailedError.class, () -> assertThat(locator).hasText("foo"));
-    assertTrue(exception.getMessage().contains("Locator.expect with timeout 1000ms"), exception.getMessage());
+    assertTrue(exception.getMessage().contains("Assert \"hasText\" with timeout 1000ms"), exception.getMessage());
     // Restore default.
     PlaywrightAssertions.setDefaultAssertionTimeout(5_000);
   }
@@ -1082,5 +1093,50 @@ public class TestLocatorAssertions extends TestBase {
     assertThat(locator).hasText("foo");
     // Restore default.
     PlaywrightAssertions.setDefaultAssertionTimeout(5_000);
+  }
+
+  @Test
+  void containsClassPass() {
+    page.setContent("<div class='foo bar baz'></div>");
+    Locator locator = page.locator("div");
+    assertThat(locator).containsClass("");
+    assertThat(locator).containsClass("bar");
+    assertThat(locator).containsClass("baz bar");
+    assertThat(locator).containsClass("  bar   foo ");
+    assertThat(locator).not().containsClass("  baz not-matching");
+  }
+
+  @Test
+  void containsClassPassWithSvgs() {
+    page.setContent("<svg class='c1 c2' role='img' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'></svg>");
+    assertThat(page.locator("svg")).containsClass("c1");
+    assertThat(page.locator("svg")).containsClass("c2 c1");
+  }
+
+  @Test
+  void containsClassFail() {
+    page.setContent("<div class='bar baz'></div>");
+    AssertionFailedError e = assertThrows(AssertionFailedError.class, () -> {
+      assertThat(page.locator("div")).containsClass("does-not-exist", new ContainsClassOptions().setTimeout(1000));
+    });
+    assertTrue(e.getMessage().contains("Assert \"containsClass\" with timeout 1000ms"), e.getMessage());
+  }
+
+  @Test
+  void containsClassPassWithArray() {
+    page.setContent("<div class='foo'></div><div class='hello bar'></div><div class='baz'></div>");
+    Locator locator = page.locator("div");
+    assertThat(locator).containsClass(asList("foo", "hello", "baz"));
+    assertThat(locator).not().hasClass(new String[]{"not-there", "hello", "baz"}); // Class not there
+    assertThat(locator).not().hasClass(new String[]{"foo", "hello"}); // length mismatch
+  }
+
+  @Test
+  void containsClassFailWithArray() {
+    page.setContent("<div class='foo'></div><div class='bar'></div><div class='bar'></div>");
+    AssertionFailedError e = assertThrows(AssertionFailedError.class, () -> {
+      assertThat(page.locator("div")).containsClass(asList("foo", "bar", "baz"), new ContainsClassOptions().setTimeout(1000));
+    });
+    assertTrue(e.getMessage().contains("Assert \"containsClass\" with timeout 1000ms"), e.getMessage());
   }
 }

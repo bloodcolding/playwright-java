@@ -17,9 +17,9 @@
 package com.microsoft.playwright.impl;
 
 import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.microsoft.playwright.PlaywrightException;
+import com.microsoft.playwright.options.ClientCertificate;
 import com.microsoft.playwright.options.FilePayload;
 import com.microsoft.playwright.options.HttpHeader;
 
@@ -31,12 +31,13 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.attribute.FileTime;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static com.microsoft.playwright.impl.ChannelOwner.NO_TIMEOUT;
 import static com.microsoft.playwright.impl.Serialization.toJsonArray;
+import static java.nio.file.Files.readAllBytes;
 
 public class Utils {
   static <F, T> T convertType(F f, Class<T> t) {
@@ -87,79 +88,6 @@ public class Utils {
       return f;
     }
     return convertType(f, (Class<T>) f.getClass());
-  }
-
-
-  // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_expressions#escaping
-  static Set<Character> escapeGlobChars = new HashSet<>(Arrays.asList('$', '^', '+', '.', '*', '(', ')', '|', '\\', '?', '{', '}', '[', ']'));
-
-  static String globToRegex(String glob) {
-    StringBuilder tokens = new StringBuilder();
-    tokens.append('^');
-    boolean inGroup = false;
-    for (int i = 0; i < glob.length(); ++i) {
-      char c = glob.charAt(i);
-      if (c == '\\' && i + 1 < glob.length()) {
-        char nextChar = glob.charAt(++i);
-        if (escapeGlobChars.contains(nextChar)) {
-          tokens.append('\\');
-        }
-        tokens.append(nextChar);
-        continue;
-      }
-      if (c == '*') {
-        boolean beforeDeep = i < 1 || glob.charAt(i - 1) == '/';
-        int starCount = 1;
-        while (i + 1 < glob.length() && glob.charAt(i + 1) == '*') {
-          starCount++;
-          i++;
-        }
-        boolean afterDeep = i + 1 >= glob.length() || glob.charAt(i + 1) == '/';
-        boolean isDeep = starCount > 1 && beforeDeep && afterDeep;
-        if (isDeep) {
-          tokens.append("((?:[^/]*(?:\\/|$))*)");
-          i++;
-        } else {
-          tokens.append("([^/]*)");
-        }
-        continue;
-      }
-
-      switch (c) {
-        case '?':
-          tokens.append('.');
-          break;
-        case '[':
-          tokens.append('[');
-          break;
-        case ']':
-          tokens.append(']');
-          break;
-        case '{':
-          inGroup = true;
-          tokens.append('(');
-          break;
-        case '}':
-          inGroup = false;
-          tokens.append(')');
-          break;
-        case ',':
-          if (inGroup) {
-            tokens.append('|');
-            break;
-          }
-          tokens.append("\\").append(c);
-          break;
-        default:
-          if (escapeGlobChars.contains(c)) {
-            tokens.append('\\');
-          }
-          tokens.append(c);
-          break;
-      }
-    }
-    tokens.append('$');
-    return tokens.toString();
   }
 
   static String mimeType(Path path) {
@@ -273,7 +201,7 @@ public class Utils {
       items.add(item);
     }
     tempFilesParams.add("items", items);
-    return context.sendMessage("createTempFiles", tempFilesParams).getAsJsonObject();
+    return context.sendMessage("createTempFiles", tempFilesParams, NO_TIMEOUT).getAsJsonObject();
   }
 
   static void checkFilePayloadSize(FilePayload[] files) {
@@ -411,5 +339,71 @@ public class Utils {
 
   static String addSourceUrlToScript(String source, Path path) {
     return source + "\n//# sourceURL=" + path.toString().replace("\n", "");
+  }
+
+  static void addToProtocol(JsonObject params, List<ClientCertificate> clientCertificateList) {
+    if (clientCertificateList == null) {
+      return;
+    }
+    JsonArray clientCertificates = new JsonArray();
+    for (ClientCertificate cert: clientCertificateList) {
+      JsonObject jsonCert = new JsonObject();
+      jsonCert.addProperty("origin", cert.origin);
+      try {
+        String certBase64 = base64Buffer(cert.cert, cert.certPath);
+        if (certBase64 != null) {
+          jsonCert.addProperty("cert",  certBase64);
+        }
+        String keyBase64 = base64Buffer(cert.key, cert.keyPath);
+        if (keyBase64 != null) {
+          jsonCert.addProperty("key", keyBase64);
+        }
+        String pfxBase64 = base64Buffer(cert.pfx, cert.pfxPath);
+        if (pfxBase64 != null) {
+          jsonCert.addProperty("pfx", pfxBase64);
+        }
+      } catch (IOException e) {
+        throw new PlaywrightException("Failed to read from file", e);
+      }
+      if (cert.passphrase != null) {
+        jsonCert.addProperty("passphrase", cert.passphrase);
+      }
+      clientCertificates.add(jsonCert);
+    }
+    params.remove("clientCertificates");
+    params.add("clientCertificates", clientCertificates);
+  }
+
+  private static String base64Buffer(byte[] bytes, Path path) throws IOException {
+    if (path != null) {
+      bytes = readAllBytes(path);
+    }
+    if (bytes == null) {
+      return null;
+    }
+    return Base64.getEncoder().encodeToString(bytes);
+  }
+
+  static JsonObject interceptionPatterns(List<UrlMatcher> matchers) {
+    JsonArray jsonPatterns = new JsonArray();
+    for (UrlMatcher matcher: matchers) {
+      JsonObject jsonPattern = new JsonObject();
+      if (matcher.glob != null) {
+        jsonPattern.addProperty("glob", matcher.glob);
+      } else if (matcher.pattern != null) {
+        jsonPattern.addProperty("regexSource", matcher.pattern.pattern());
+        jsonPattern.addProperty("regexFlags", toJsRegexFlags(matcher.pattern));
+      } else {
+        // Match all requests.
+        jsonPattern.addProperty("glob", "**/*");
+        jsonPatterns = new JsonArray();
+        jsonPatterns.add(jsonPattern);
+        break;
+      }
+      jsonPatterns.add(jsonPattern);
+    }
+    JsonObject result = new JsonObject();
+    result.add("patterns", jsonPatterns);
+    return result;
   }
 }

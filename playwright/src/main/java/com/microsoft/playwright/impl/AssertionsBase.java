@@ -38,30 +38,30 @@ class AssertionsBase {
     this.isNot = isNot;
   }
 
-  void expectImpl(String expression, ExpectedTextValue textValue, Object expected, String message, FrameExpectOptions options) {
-    expectImpl(expression, asList(textValue), expected, message, options);
+  void expectImpl(String expression, ExpectedTextValue textValue, Object expected, String message, FrameExpectOptions options, String title) {
+    expectImpl(expression, asList(textValue), expected, message, options, title);
   }
 
-  void expectImpl(String expression, List<ExpectedTextValue> expectedText, Object expected, String message, FrameExpectOptions options) {
+  void expectImpl(String expression, List<ExpectedTextValue> expectedText, Object expected, String message, FrameExpectOptions options, String title) {
     if (options == null) {
       options = new FrameExpectOptions();
     }
     options.expectedText = expectedText;
-    options.isNot = isNot;
-    expectImpl(expression, options, expected, message);
+    expectImpl(expression, options, expected, message, title);
   }
 
-  void expectImpl(String expression, FrameExpectOptions expectOptions, Object expected, String message) {
+  void expectImpl(String expression, FrameExpectOptions expectOptions, Object expected, String message, String title) {
     if (expectOptions.timeout == null) {
       expectOptions.timeout = AssertionsTimeout.defaultTimeout;
     }
-    if (expectOptions.isNot) {
+    expectOptions.isNot = isNot;
+    if (isNot) {
       message = message.replace("expected to", "expected not to");
     }
-    FrameExpectResult result = actualLocator.expect(expression, expectOptions);
+    FrameExpectResult result = actualLocator.expect(expression, expectOptions, title);
     if (result.matches == isNot) {
       Object actual = result.received == null ? null : Serialization.deserialize(result.received);
-      String log = String.join("\n", result.log);
+      String log = (result.log == null) ? "" : String.join("\n", result.log);
       if (!log.isEmpty()) {
         log = "\nCall log:\n" + log;
       }

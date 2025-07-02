@@ -290,8 +290,9 @@ public class TestPageClock {
     Page popup = page.waitForPopup(() -> {
       page.evaluate("url => window.open(url)", server.PREFIX + "/popup.html");
     });
+    popup.waitForURL(server.PREFIX + "/popup.html");
     Double popupTime = (Double) popup.evaluate("time");
-    assertTrue(popupTime >= 2000);
+    assertTrue(popupTime >= 2000, "popupTime = " + popupTime);
   }
 
   @Test
@@ -310,6 +311,7 @@ public class TestPageClock {
     Page popup = page.waitForPopup(() -> {
       page.evaluate("url => window.open(url)", server.PREFIX + "/popup.html");
     });
+    popup.waitForURL(server.PREFIX + "/popup.html");
     Object popupTime = popup.evaluate("time");
     assertEquals(1000, popupTime);
   }
@@ -389,8 +391,8 @@ public class TestPageClock {
     page.clock().install(new Clock.InstallOptions().setTime(0));
     page.navigate("data:text/html,");
     page.clock().pauseAt(1000);
-    page.waitForTimeout(1000);
-    page.clock().resume();
+    // Internally wait to make sure the clock is paused and not running.
+    page.waitForTimeout(1111);
     int now = (int) page.evaluate("() => Date.now()");
     assertTrue(now >= 0 && now <= 1000);
   }
@@ -454,5 +456,11 @@ public class TestPageClock {
     page.clock().runFor(1);
     assertEquals(2, calls.size());
     assertEquals("inner", ((Object[]) calls.get(1))[0]);
+  }
+
+  @Test
+  void shouldThrowForInvalidDate(Page page) {
+    Exception exception1 = assertThrows(PlaywrightException.class, () -> page.clock().setSystemTime("invalid"));
+    assertTrue(exception1.getMessage().contains("Invalid date: invalid"), exception1.getMessage());
   }
 }

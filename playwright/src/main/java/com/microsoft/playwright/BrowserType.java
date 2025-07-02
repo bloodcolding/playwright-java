@@ -172,9 +172,14 @@ public interface BrowserType {
      */
     public List<String> args;
     /**
-     * Browser distribution channel.  Supported values are "chrome", "chrome-beta", "chrome-dev", "chrome-canary", "msedge",
-     * "msedge-beta", "msedge-dev", "msedge-canary". Read more about using <a
-     * href="https://playwright.dev/java/docs/browsers#google-chrome--microsoft-edge">Google Chrome and Microsoft Edge</a>.
+     * Browser distribution channel.
+     *
+     * <p> Use "chromium" to <a href="https://playwright.dev/java/docs/browsers#chromium-new-headless-mode">opt in to new headless
+     * mode</a>.
+     *
+     * <p> Use "chrome", "chrome-beta", "chrome-dev", "chrome-canary", "msedge", "msedge-beta", "msedge-dev", or "msedge-canary" to
+     * use branded <a href="https://playwright.dev/java/docs/browsers#google-chrome--microsoft-edge">Google Chrome and
+     * Microsoft Edge</a>.
      */
     public Object channel;
     /**
@@ -204,6 +209,9 @@ public interface BrowserType {
     /**
      * Firefox user preferences. Learn more about the Firefox user preferences at <a
      * href="https://support.mozilla.org/en-US/kb/about-config-editor-firefox">{@code about:config}</a>.
+     *
+     * <p> You can also provide a path to a custom <a href="https://mozilla.github.io/policy-templates/">{@code policies.json}
+     * file</a> via {@code PLAYWRIGHT_FIREFOX_POLICIES_JSON} environment variable.
      */
     public Map<String, Object> firefoxUserPrefs;
     /**
@@ -221,8 +229,8 @@ public interface BrowserType {
     /**
      * Whether to run browser in headless mode. More details for <a
      * href="https://developers.google.com/web/updates/2017/04/headless-chrome">Chromium</a> and <a
-     * href="https://developer.mozilla.org/en-US/docs/Mozilla/Firefox/Headless_mode">Firefox</a>. Defaults to {@code true}
-     * unless the {@code devtools} option is {@code true}.
+     * href="https://hacks.mozilla.org/2017/12/using-headless-mode-in-firefox/">Firefox</a>. Defaults to {@code true} unless
+     * the {@code devtools} option is {@code true}.
      */
     public Boolean headless;
     /**
@@ -265,18 +273,28 @@ public interface BrowserType {
     }
     @Deprecated
     /**
-     * Browser distribution channel.  Supported values are "chrome", "chrome-beta", "chrome-dev", "chrome-canary", "msedge",
-     * "msedge-beta", "msedge-dev", "msedge-canary". Read more about using <a
-     * href="https://playwright.dev/java/docs/browsers#google-chrome--microsoft-edge">Google Chrome and Microsoft Edge</a>.
+     * Browser distribution channel.
+     *
+     * <p> Use "chromium" to <a href="https://playwright.dev/java/docs/browsers#chromium-new-headless-mode">opt in to new headless
+     * mode</a>.
+     *
+     * <p> Use "chrome", "chrome-beta", "chrome-dev", "chrome-canary", "msedge", "msedge-beta", "msedge-dev", or "msedge-canary" to
+     * use branded <a href="https://playwright.dev/java/docs/browsers#google-chrome--microsoft-edge">Google Chrome and
+     * Microsoft Edge</a>.
      */
     public LaunchOptions setChannel(BrowserChannel channel) {
       this.channel = channel;
       return this;
     }
     /**
-     * Browser distribution channel.  Supported values are "chrome", "chrome-beta", "chrome-dev", "chrome-canary", "msedge",
-     * "msedge-beta", "msedge-dev", "msedge-canary". Read more about using <a
-     * href="https://playwright.dev/java/docs/browsers#google-chrome--microsoft-edge">Google Chrome and Microsoft Edge</a>.
+     * Browser distribution channel.
+     *
+     * <p> Use "chromium" to <a href="https://playwright.dev/java/docs/browsers#chromium-new-headless-mode">opt in to new headless
+     * mode</a>.
+     *
+     * <p> Use "chrome", "chrome-beta", "chrome-dev", "chrome-canary", "msedge", "msedge-beta", "msedge-dev", or "msedge-canary" to
+     * use branded <a href="https://playwright.dev/java/docs/browsers#google-chrome--microsoft-edge">Google Chrome and
+     * Microsoft Edge</a>.
      */
     public LaunchOptions setChannel(String channel) {
       this.channel = channel;
@@ -324,6 +342,9 @@ public interface BrowserType {
     /**
      * Firefox user preferences. Learn more about the Firefox user preferences at <a
      * href="https://support.mozilla.org/en-US/kb/about-config-editor-firefox">{@code about:config}</a>.
+     *
+     * <p> You can also provide a path to a custom <a href="https://mozilla.github.io/policy-templates/">{@code policies.json}
+     * file</a> via {@code PLAYWRIGHT_FIREFOX_POLICIES_JSON} environment variable.
      */
     public LaunchOptions setFirefoxUserPrefs(Map<String, Object> firefoxUserPrefs) {
       this.firefoxUserPrefs = firefoxUserPrefs;
@@ -353,8 +374,8 @@ public interface BrowserType {
     /**
      * Whether to run browser in headless mode. More details for <a
      * href="https://developers.google.com/web/updates/2017/04/headless-chrome">Chromium</a> and <a
-     * href="https://developer.mozilla.org/en-US/docs/Mozilla/Firefox/Headless_mode">Firefox</a>. Defaults to {@code true}
-     * unless the {@code devtools} option is {@code true}.
+     * href="https://hacks.mozilla.org/2017/12/using-headless-mode-in-firefox/">Firefox</a>. Defaults to {@code true} unless
+     * the {@code devtools} option is {@code true}.
      */
     public LaunchOptions setHeadless(boolean headless) {
       this.headless = headless;
@@ -446,9 +467,14 @@ public interface BrowserType {
      */
     public Boolean bypassCSP;
     /**
-     * Browser distribution channel.  Supported values are "chrome", "chrome-beta", "chrome-dev", "chrome-canary", "msedge",
-     * "msedge-beta", "msedge-dev", "msedge-canary". Read more about using <a
-     * href="https://playwright.dev/java/docs/browsers#google-chrome--microsoft-edge">Google Chrome and Microsoft Edge</a>.
+     * Browser distribution channel.
+     *
+     * <p> Use "chromium" to <a href="https://playwright.dev/java/docs/browsers#chromium-new-headless-mode">opt in to new headless
+     * mode</a>.
+     *
+     * <p> Use "chrome", "chrome-beta", "chrome-dev", "chrome-canary", "msedge", "msedge-beta", "msedge-dev", or "msedge-canary" to
+     * use branded <a href="https://playwright.dev/java/docs/browsers#google-chrome--microsoft-edge">Google Chrome and
+     * Microsoft Edge</a>.
      */
     public Object channel;
     /**
@@ -456,11 +482,33 @@ public interface BrowserType {
      */
     public Boolean chromiumSandbox;
     /**
-     * Emulates {@code "prefers-colors-scheme"} media feature, supported values are {@code "light"}, {@code "dark"}, {@code
-     * "no-preference"}. See {@link com.microsoft.playwright.Page#emulateMedia Page.emulateMedia()} for more details. Passing
-     * {@code null} resets emulation to system defaults. Defaults to {@code "light"}.
+     * TLS Client Authentication allows the server to request a client certificate and verify it.
+     *
+     * <p> <strong>Details</strong>
+     *
+     * <p> An array of client certificates to be used. Each certificate object must have either both {@code certPath} and {@code
+     * keyPath}, a single {@code pfxPath}, or their corresponding direct value equivalents ({@code cert} and {@code key}, or
+     * {@code pfx}). Optionally, {@code passphrase} property should be provided if the certificate is encrypted. The {@code
+     * origin} property should be provided with an exact match to the request origin that the certificate is valid for.
+     *
+     * <p> <strong>NOTE:</strong> When using WebKit on macOS, accessing {@code localhost} will not pick up client certificates. You can make it work by
+     * replacing {@code localhost} with {@code local.playwright}.
+     */
+    public List<ClientCertificate> clientCertificates;
+    /**
+     * Emulates <a
+     * href="https://developer.mozilla.org/en-US/docs/Web/CSS/@media/prefers-color-scheme">prefers-colors-scheme</a> media
+     * feature, supported values are {@code "light"} and {@code "dark"}. See {@link com.microsoft.playwright.Page#emulateMedia
+     * Page.emulateMedia()} for more details. Passing {@code null} resets emulation to system defaults. Defaults to {@code
+     * "light"}.
      */
     public Optional<ColorScheme> colorScheme;
+    /**
+     * Emulates {@code "prefers-contrast"} media feature, supported values are {@code "no-preference"}, {@code "more"}. See
+     * {@link com.microsoft.playwright.Page#emulateMedia Page.emulateMedia()} for more details. Passing {@code null} resets
+     * emulation to system defaults. Defaults to {@code "no-preference"}.
+     */
+    public Optional<Contrast> contrast;
     /**
      * Specify device scale factor (can be thought of as dpr). Defaults to {@code 1}. Learn more about <a
      * href="https://playwright.dev/java/docs/emulation#devices">emulating devices with device scale factor</a>.
@@ -493,6 +541,9 @@ public interface BrowserType {
     /**
      * Firefox user preferences. Learn more about the Firefox user preferences at <a
      * href="https://support.mozilla.org/en-US/kb/about-config-editor-firefox">{@code about:config}</a>.
+     *
+     * <p> You can also provide a path to a custom <a href="https://mozilla.github.io/policy-templates/">{@code policies.json}
+     * file</a> via {@code PLAYWRIGHT_FIREFOX_POLICIES_JSON} environment variable.
      */
     public Map<String, Object> firefoxUserPrefs;
     /**
@@ -522,8 +573,8 @@ public interface BrowserType {
     /**
      * Whether to run browser in headless mode. More details for <a
      * href="https://developers.google.com/web/updates/2017/04/headless-chrome">Chromium</a> and <a
-     * href="https://developer.mozilla.org/en-US/docs/Mozilla/Firefox/Headless_mode">Firefox</a>. Defaults to {@code true}
-     * unless the {@code devtools} option is {@code true}.
+     * href="https://hacks.mozilla.org/2017/12/using-headless-mode-in-firefox/">Firefox</a>. Defaults to {@code true} unless
+     * the {@code devtools} option is {@code true}.
      */
     public Boolean headless;
     /**
@@ -718,18 +769,28 @@ public interface BrowserType {
     }
     @Deprecated
     /**
-     * Browser distribution channel.  Supported values are "chrome", "chrome-beta", "chrome-dev", "chrome-canary", "msedge",
-     * "msedge-beta", "msedge-dev", "msedge-canary". Read more about using <a
-     * href="https://playwright.dev/java/docs/browsers#google-chrome--microsoft-edge">Google Chrome and Microsoft Edge</a>.
+     * Browser distribution channel.
+     *
+     * <p> Use "chromium" to <a href="https://playwright.dev/java/docs/browsers#chromium-new-headless-mode">opt in to new headless
+     * mode</a>.
+     *
+     * <p> Use "chrome", "chrome-beta", "chrome-dev", "chrome-canary", "msedge", "msedge-beta", "msedge-dev", or "msedge-canary" to
+     * use branded <a href="https://playwright.dev/java/docs/browsers#google-chrome--microsoft-edge">Google Chrome and
+     * Microsoft Edge</a>.
      */
     public LaunchPersistentContextOptions setChannel(BrowserChannel channel) {
       this.channel = channel;
       return this;
     }
     /**
-     * Browser distribution channel.  Supported values are "chrome", "chrome-beta", "chrome-dev", "chrome-canary", "msedge",
-     * "msedge-beta", "msedge-dev", "msedge-canary". Read more about using <a
-     * href="https://playwright.dev/java/docs/browsers#google-chrome--microsoft-edge">Google Chrome and Microsoft Edge</a>.
+     * Browser distribution channel.
+     *
+     * <p> Use "chromium" to <a href="https://playwright.dev/java/docs/browsers#chromium-new-headless-mode">opt in to new headless
+     * mode</a>.
+     *
+     * <p> Use "chrome", "chrome-beta", "chrome-dev", "chrome-canary", "msedge", "msedge-beta", "msedge-dev", or "msedge-canary" to
+     * use branded <a href="https://playwright.dev/java/docs/browsers#google-chrome--microsoft-edge">Google Chrome and
+     * Microsoft Edge</a>.
      */
     public LaunchPersistentContextOptions setChannel(String channel) {
       this.channel = channel;
@@ -743,12 +804,40 @@ public interface BrowserType {
       return this;
     }
     /**
-     * Emulates {@code "prefers-colors-scheme"} media feature, supported values are {@code "light"}, {@code "dark"}, {@code
-     * "no-preference"}. See {@link com.microsoft.playwright.Page#emulateMedia Page.emulateMedia()} for more details. Passing
-     * {@code null} resets emulation to system defaults. Defaults to {@code "light"}.
+     * TLS Client Authentication allows the server to request a client certificate and verify it.
+     *
+     * <p> <strong>Details</strong>
+     *
+     * <p> An array of client certificates to be used. Each certificate object must have either both {@code certPath} and {@code
+     * keyPath}, a single {@code pfxPath}, or their corresponding direct value equivalents ({@code cert} and {@code key}, or
+     * {@code pfx}). Optionally, {@code passphrase} property should be provided if the certificate is encrypted. The {@code
+     * origin} property should be provided with an exact match to the request origin that the certificate is valid for.
+     *
+     * <p> <strong>NOTE:</strong> When using WebKit on macOS, accessing {@code localhost} will not pick up client certificates. You can make it work by
+     * replacing {@code localhost} with {@code local.playwright}.
+     */
+    public LaunchPersistentContextOptions setClientCertificates(List<ClientCertificate> clientCertificates) {
+      this.clientCertificates = clientCertificates;
+      return this;
+    }
+    /**
+     * Emulates <a
+     * href="https://developer.mozilla.org/en-US/docs/Web/CSS/@media/prefers-color-scheme">prefers-colors-scheme</a> media
+     * feature, supported values are {@code "light"} and {@code "dark"}. See {@link com.microsoft.playwright.Page#emulateMedia
+     * Page.emulateMedia()} for more details. Passing {@code null} resets emulation to system defaults. Defaults to {@code
+     * "light"}.
      */
     public LaunchPersistentContextOptions setColorScheme(ColorScheme colorScheme) {
       this.colorScheme = Optional.ofNullable(colorScheme);
+      return this;
+    }
+    /**
+     * Emulates {@code "prefers-contrast"} media feature, supported values are {@code "no-preference"}, {@code "more"}. See
+     * {@link com.microsoft.playwright.Page#emulateMedia Page.emulateMedia()} for more details. Passing {@code null} resets
+     * emulation to system defaults. Defaults to {@code "no-preference"}.
+     */
+    public LaunchPersistentContextOptions setContrast(Contrast contrast) {
+      this.contrast = Optional.ofNullable(contrast);
       return this;
     }
     /**
@@ -801,6 +890,9 @@ public interface BrowserType {
     /**
      * Firefox user preferences. Learn more about the Firefox user preferences at <a
      * href="https://support.mozilla.org/en-US/kb/about-config-editor-firefox">{@code about:config}</a>.
+     *
+     * <p> You can also provide a path to a custom <a href="https://mozilla.github.io/policy-templates/">{@code policies.json}
+     * file</a> via {@code PLAYWRIGHT_FIREFOX_POLICIES_JSON} environment variable.
      */
     public LaunchPersistentContextOptions setFirefoxUserPrefs(Map<String, Object> firefoxUserPrefs) {
       this.firefoxUserPrefs = firefoxUserPrefs;
@@ -854,8 +946,8 @@ public interface BrowserType {
     /**
      * Whether to run browser in headless mode. More details for <a
      * href="https://developers.google.com/web/updates/2017/04/headless-chrome">Chromium</a> and <a
-     * href="https://developer.mozilla.org/en-US/docs/Mozilla/Firefox/Headless_mode">Firefox</a>. Defaults to {@code true}
-     * unless the {@code devtools} option is {@code true}.
+     * href="https://hacks.mozilla.org/2017/12/using-headless-mode-in-firefox/">Firefox</a>. Defaults to {@code true} unless
+     * the {@code devtools} option is {@code true}.
      */
     public LaunchPersistentContextOptions setHeadless(boolean headless) {
       this.headless = headless;
@@ -1132,22 +1224,24 @@ public interface BrowserType {
     }
   }
   /**
-   * This method attaches Playwright to an existing browser instance. When connecting to another browser launched via {@code
-   * BrowserType.launchServer} in Node.js, the major and minor version needs to match the client version (1.2.3 → is
-   * compatible with 1.2.x).
+   * This method attaches Playwright to an existing browser instance created via {@code BrowserType.launchServer} in Node.js.
    *
-   * @param wsEndpoint A browser websocket endpoint to connect to.
+   * <p> <strong>NOTE:</strong> The major and minor version of the Playwright instance that connects needs to match the version of Playwright that
+   * launches the browser (1.2.3 → is compatible with 1.2.x).
+   *
+   * @param wsEndpoint A Playwright browser websocket endpoint to connect to. You obtain this endpoint via {@code BrowserServer.wsEndpoint}.
    * @since v1.8
    */
   default Browser connect(String wsEndpoint) {
     return connect(wsEndpoint, null);
   }
   /**
-   * This method attaches Playwright to an existing browser instance. When connecting to another browser launched via {@code
-   * BrowserType.launchServer} in Node.js, the major and minor version needs to match the client version (1.2.3 → is
-   * compatible with 1.2.x).
+   * This method attaches Playwright to an existing browser instance created via {@code BrowserType.launchServer} in Node.js.
    *
-   * @param wsEndpoint A browser websocket endpoint to connect to.
+   * <p> <strong>NOTE:</strong> The major and minor version of the Playwright instance that connects needs to match the version of Playwright that
+   * launches the browser (1.2.3 → is compatible with 1.2.x).
+   *
+   * @param wsEndpoint A Playwright browser websocket endpoint to connect to. You obtain this endpoint via {@code BrowserServer.wsEndpoint}.
    * @since v1.8
    */
   Browser connect(String wsEndpoint, ConnectOptions options);
@@ -1157,6 +1251,11 @@ public interface BrowserType {
    * <p> The default browser context is accessible via {@link com.microsoft.playwright.Browser#contexts Browser.contexts()}.
    *
    * <p> <strong>NOTE:</strong> Connecting over the Chrome DevTools Protocol is only supported for Chromium-based browsers.
+   *
+   * <p> <strong>NOTE:</strong> This connection is significantly lower fidelity than the Playwright protocol connection via {@link
+   * com.microsoft.playwright.BrowserType#connect BrowserType.connect()}. If you are experiencing issues or attempting to use
+   * advanced functionality, you probably want to use {@link com.microsoft.playwright.BrowserType#connect
+   * BrowserType.connect()}.
    *
    * <p> <strong>Usage</strong>
    * <pre>{@code
@@ -1178,6 +1277,11 @@ public interface BrowserType {
    * <p> The default browser context is accessible via {@link com.microsoft.playwright.Browser#contexts Browser.contexts()}.
    *
    * <p> <strong>NOTE:</strong> Connecting over the Chrome DevTools Protocol is only supported for Chromium-based browsers.
+   *
+   * <p> <strong>NOTE:</strong> This connection is significantly lower fidelity than the Playwright protocol connection via {@link
+   * com.microsoft.playwright.BrowserType#connect BrowserType.connect()}. If you are experiencing issues or attempting to use
+   * advanced functionality, you probably want to use {@link com.microsoft.playwright.BrowserType#connect
+   * BrowserType.connect()}.
    *
    * <p> <strong>Usage</strong>
    * <pre>{@code
@@ -1273,11 +1377,15 @@ public interface BrowserType {
    * <p> Launches browser that uses persistent storage located at {@code userDataDir} and returns the only context. Closing this
    * context will automatically close the browser.
    *
-   * @param userDataDir Path to a User Data Directory, which stores browser session data like cookies and local storage. More details for <a
+   * @param userDataDir Path to a User Data Directory, which stores browser session data like cookies and local storage. Pass an empty string to
+   * create a temporary directory.
+   *
+   * <p> More details for <a
    * href="https://chromium.googlesource.com/chromium/src/+/master/docs/user_data_dir.md#introduction">Chromium</a> and <a
-   * href="https://developer.mozilla.org/en-US/docs/Mozilla/Command_Line_Options#User_Profile">Firefox</a>. Note that
-   * Chromium's user data directory is the **parent** directory of the "Profile Path" seen at {@code chrome://version}. Pass
-   * an empty string to use a temporary directory instead.
+   * href="https://wiki.mozilla.org/Firefox/CommandLineOptions#User_profile">Firefox</a>. Chromium's user data directory is
+   * the **parent** directory of the "Profile Path" seen at {@code chrome://version}.
+   *
+   * <p> Note that browsers do not allow launching multiple instances with the same User Data Directory.
    * @since v1.8
    */
   default BrowserContext launchPersistentContext(Path userDataDir) {
@@ -1289,11 +1397,15 @@ public interface BrowserType {
    * <p> Launches browser that uses persistent storage located at {@code userDataDir} and returns the only context. Closing this
    * context will automatically close the browser.
    *
-   * @param userDataDir Path to a User Data Directory, which stores browser session data like cookies and local storage. More details for <a
+   * @param userDataDir Path to a User Data Directory, which stores browser session data like cookies and local storage. Pass an empty string to
+   * create a temporary directory.
+   *
+   * <p> More details for <a
    * href="https://chromium.googlesource.com/chromium/src/+/master/docs/user_data_dir.md#introduction">Chromium</a> and <a
-   * href="https://developer.mozilla.org/en-US/docs/Mozilla/Command_Line_Options#User_Profile">Firefox</a>. Note that
-   * Chromium's user data directory is the **parent** directory of the "Profile Path" seen at {@code chrome://version}. Pass
-   * an empty string to use a temporary directory instead.
+   * href="https://wiki.mozilla.org/Firefox/CommandLineOptions#User_profile">Firefox</a>. Chromium's user data directory is
+   * the **parent** directory of the "Profile Path" seen at {@code chrome://version}.
+   *
+   * <p> Note that browsers do not allow launching multiple instances with the same User Data Directory.
    * @since v1.8
    */
   BrowserContext launchPersistentContext(Path userDataDir, LaunchPersistentContextOptions options);

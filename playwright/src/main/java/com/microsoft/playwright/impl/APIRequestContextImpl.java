@@ -39,6 +39,8 @@ class APIRequestContextImpl extends ChannelOwner implements APIRequestContext {
   private final TracingImpl tracing;
   private String disposeReason;
 
+  protected TimeoutSettings timeoutSettings = new TimeoutSettings();
+
   APIRequestContextImpl(ChannelOwner parent, String type, String guid, JsonObject initializer) {
     super(parent, type, guid, initializer);
     this.tracing = connection.getExistingObject(initializer.getAsJsonObject("tracing").get("guid").getAsString());
@@ -51,21 +53,17 @@ class APIRequestContextImpl extends ChannelOwner implements APIRequestContext {
 
   @Override
   public void dispose(DisposeOptions options) {
-    withLogging("APIRequestContext.dispose", () -> disposeImpl(options));
-  }
-
-  private void disposeImpl(DisposeOptions options) {
     if (options == null) {
       options = new DisposeOptions();
     }
     disposeReason = options.reason;
     JsonObject params = gson().toJsonTree(options).getAsJsonObject();
-    sendMessage("dispose", params);
+    sendMessage("dispose", params, NO_TIMEOUT);
   }
 
   @Override
   public APIResponse fetch(String urlOrRequest, RequestOptions options) {
-    return withLogging("APIRequestContext.fetch", () -> fetchImpl(urlOrRequest, (RequestOptionsImpl) options));
+    return fetchImpl(urlOrRequest, (RequestOptionsImpl) options);
   }
 
   @Override
@@ -93,6 +91,7 @@ class APIRequestContextImpl extends ChannelOwner implements APIRequestContext {
     if (options == null) {
       options = new RequestOptionsImpl();
     }
+    options.timeout = timeoutSettings.timeout(options.timeout);
     JsonObject params = new JsonObject();
     params.addProperty("url", url);
     if (options.params != null) {
@@ -132,9 +131,6 @@ class APIRequestContextImpl extends ChannelOwner implements APIRequestContext {
     if (options.multipart != null) {
       params.add("multipartData", serializeMultipartData(options.multipart.fields));
     }
-    if (options.timeout != null) {
-      params.addProperty("timeout", options.timeout);
-    }
     if (options.failOnStatusCode != null) {
       params.addProperty("failOnStatusCode", options.failOnStatusCode);
     }
@@ -147,7 +143,13 @@ class APIRequestContextImpl extends ChannelOwner implements APIRequestContext {
       }
       params.addProperty("maxRedirects", options.maxRedirects);
     }
-    JsonObject json = sendMessage("fetch", params).getAsJsonObject();
+    if (options.maxRetries != null) {
+      if (options.maxRetries < 0) {
+        throw new PlaywrightException("'maxRetries' must be greater than or equal to '0'");
+      }
+      params.addProperty("maxRetries", options.maxRetries);
+    }
+    JsonObject json = sendMessage("fetch", params, timeoutSettings.timeout(options.timeout)).getAsJsonObject();
     return new APIResponseImpl(this, json.getAsJsonObject("response"));
   }
 
@@ -213,14 +215,12 @@ class APIRequestContextImpl extends ChannelOwner implements APIRequestContext {
 
   @Override
   public String storageState(StorageStateOptions options) {
-    return withLogging("APIRequestContext.storageState", () -> {
-      JsonElement json = sendMessage("storageState");
-      String storageState = json.toString();
-      if (options != null && options.path != null) {
-        Utils.writeToFile(storageState.getBytes(StandardCharsets.UTF_8), options.path);
-      }
-      return storageState;
-    });
+    JsonElement json = sendMessage("storageState");
+    String storageState = json.toString();
+    if (options != null && options.path != null) {
+      Utils.writeToFile(storageState.getBytes(StandardCharsets.UTF_8), options.path);
+    }
+    return storageState;
   }
 
   private static RequestOptionsImpl ensureOptions(RequestOptions options, String method) {

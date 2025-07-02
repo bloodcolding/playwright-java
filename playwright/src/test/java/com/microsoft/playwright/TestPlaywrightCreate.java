@@ -17,12 +17,10 @@
 package com.microsoft.playwright;
 
 import com.microsoft.playwright.impl.PlaywrightImpl;
-import com.microsoft.playwright.impl.driver.Driver;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -35,7 +33,6 @@ import static org.junit.jupiter.api.Assertions.*;
 public class TestPlaywrightCreate {
   @Test
   void shouldSupportEnvSkipBrowserDownload(@TempDir Path browsersDir) throws IOException, NoSuchFieldException, IllegalAccessException {
-    System.err.println("shouldSupportEnvSkipBrowserDownload PLAYWRIGHT_BROWSERS_PATH = " + browsersDir);
     Map<String, String> env = mapOf("PLAYWRIGHT_BROWSERS_PATH", browsersDir.toString(),
       "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD", "1");
     Playwright.CreateOptions options = new Playwright.CreateOptions().setEnv(env);

@@ -19,6 +19,7 @@ package com.microsoft.playwright.impl;
 import com.google.gson.JsonObject;
 import com.microsoft.playwright.Mouse;
 
+import static com.microsoft.playwright.impl.ChannelOwner.NO_TIMEOUT;
 import static com.microsoft.playwright.impl.Serialization.gson;
 import static com.microsoft.playwright.impl.Utils.convertType;
 
@@ -31,22 +32,18 @@ class MouseImpl implements Mouse {
 
   @Override
   public void click(double x, double y, ClickOptions options) {
-    page.withLogging("Mouse.click", () -> clickImpl(x, y, options));
-  }
-
-  private void clickImpl(double x, double y, ClickOptions options) {
     if (options == null) {
       options = new ClickOptions();
     }
     JsonObject params = gson().toJsonTree(options).getAsJsonObject();
     params.addProperty("x", x);
     params.addProperty("y", y);
-    page.sendMessage("mouseClick", params);
+    page.sendMessage("mouseClick", params, NO_TIMEOUT);
   }
 
   @Override
   public void dblclick(double x, double y, DblclickOptions options) {
-    page.withLogging("Mouse.dblclick", () -> dblclickImpl(x, y, options));
+    page.withTitle("Double click", () -> dblclickImpl(x, y, options));
   }
 
   private void dblclickImpl(double x, double y, DblclickOptions options) {
@@ -62,52 +59,38 @@ class MouseImpl implements Mouse {
 
   @Override
   public void down(DownOptions options) {
-    page.withLogging("Mouse.down", () -> downImpl(options));
-  }
-
-  private void downImpl(DownOptions options) {
     if (options == null) {
       options = new DownOptions();
     }
     JsonObject params = gson().toJsonTree(options).getAsJsonObject();
-    page.sendMessage("mouseDown", params);
+    page.sendMessage("mouseDown", params, NO_TIMEOUT);
   }
 
   @Override
   public void move(double x, double y, MoveOptions options) {
-    page.withLogging("Mouse.move", () -> moveImpl(x, y, options));
-  }
-
-  private void moveImpl(double x, double y, MoveOptions options) {
     if (options == null) {
       options = new MoveOptions();
     }
     JsonObject params = gson().toJsonTree(options).getAsJsonObject();
     params.addProperty("x", x);
     params.addProperty("y", y);
-    page.sendMessage("mouseMove", params);
+    page.sendMessage("mouseMove", params, NO_TIMEOUT);
   }
 
   @Override
   public void up(UpOptions options) {
-    page.withLogging("Mouse.up", () -> upImpl(options));
-  }
-
-  @Override
-  public void wheel(double deltaX, double deltaY) {
-    page.withLogging("Mouse.wheel", () -> {
-      JsonObject params = new JsonObject();
-      params.addProperty("deltaX", deltaX);
-      params.addProperty("deltaY", deltaY);
-      page.sendMessage("mouseWheel", params);
-    });
-  }
-
-  private void upImpl(UpOptions options) {
     if (options == null) {
       options = new UpOptions();
     }
     JsonObject params = gson().toJsonTree(options).getAsJsonObject();
-    page.sendMessage("mouseUp", params);
+    page.sendMessage("mouseUp", params, NO_TIMEOUT);
+  }
+
+  @Override
+  public void wheel(double deltaX, double deltaY) {
+    JsonObject params = new JsonObject();
+    params.addProperty("deltaX", deltaX);
+    params.addProperty("deltaY", deltaY);
+    page.sendMessage("mouseWheel", params, NO_TIMEOUT);
   }
 }

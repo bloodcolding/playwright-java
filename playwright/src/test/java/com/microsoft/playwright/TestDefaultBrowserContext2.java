@@ -16,6 +16,7 @@
 
 package com.microsoft.playwright;
 
+import com.microsoft.playwright.options.Contrast;
 import com.microsoft.playwright.options.Geolocation;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assumptions;
@@ -28,6 +29,7 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -169,35 +171,6 @@ public class TestDefaultBrowserContext2 extends TestBase {
   }
 
   @Test
-  void shouldRestoreCookiesFromUserDataDir() throws IOException {
-// TODO:   test.flaky(browserName === "chromium");
-    Path userDataDir = tempDir.resolve("user-data-dir");
-    BrowserType.LaunchPersistentContextOptions browserOptions = null;
-    BrowserContext browserContext = browserType.launchPersistentContext(userDataDir, browserOptions);
-    Page page = browserContext.newPage();
-    page.navigate(server.EMPTY_PAGE);
-    Object documentCookie = page.evaluate("() => {\n" +
-      "    document.cookie = 'doSomethingOnlyOnce=true; expires=Fri, 31 Dec 9999 23:59:59 GMT';\n" +
-      "    return document.cookie;\n" +
-      "  }");
-    assertEquals("doSomethingOnlyOnce=true", documentCookie);
-    browserContext.close();
-
-    BrowserContext browserContext2 = browserType.launchPersistentContext(userDataDir, browserOptions);
-    Page page2 = browserContext2.newPage();
-    page2.navigate(server.EMPTY_PAGE);
-    assertEquals("doSomethingOnlyOnce=true", page2.evaluate("() => document.cookie"));
-    browserContext2.close();
-
-    Path userDataDir2 = tempDir.resolve("user-data-dir-2");
-    BrowserContext browserContext3 = browserType.launchPersistentContext(userDataDir2, browserOptions);
-    Page page3 = browserContext3.newPage();
-    page3.navigate(server.EMPTY_PAGE);
-    assertNotEquals("doSomethingOnlyOnce=true", page3.evaluate("() => document.cookie"));
-    browserContext3.close();
-  }
-
-  @Test
   void shouldHaveDefaultURLWhenLaunchingBrowser() {
     launchPersistent();
     List<String> urls = persistentContext.pages().stream().map(page -> page.url()).collect(Collectors.toList());
@@ -311,4 +284,42 @@ public class TestDefaultBrowserContext2 extends TestBase {
     assertEquals(1, fields.size());
     assertEquals("200MB.zip", fields.get(0).filename);
     assertEquals(200 * 1024 * 1024, fields.get(0).content.length());
-  }}
+  }
+
+  @Test
+  void shouldSupportContrastOption() {
+    Page page = launchPersistent(new BrowserType.LaunchPersistentContextOptions().setContrast(Contrast.MORE));
+    assertEquals(true, page.evaluate("() => matchMedia('(prefers-contrast: more)').matches"));
+    assertEquals(false, page.evaluate("() => matchMedia('(prefers-contrast: no-preference)').matches"));
+  }
+
+  static boolean tempDirCanBeOnDifferentRoot() {
+    return isWindows;
+  }
+
+  @Test
+  @DisabledIf(value="tempDirCanBeOnDifferentRoot", disabledReason="IllegalArgument 'other' has different root on GitHub Actions.")
+  void shouldAcceptRelativeUserDataDir(@TempDir Path tmpDir) throws Exception {
+    Path userDataDir = tempDir.resolve("user-data-dir");
+    Path cwd = Paths.get("").toAbsolutePath();
+    Path relativePath = cwd.relativize(userDataDir);
+    BrowserContext context = browserType.launchPersistentContext(relativePath);
+    assertTrue(Files.list(userDataDir).count() > 0);
+    context.close();
+  }
+
+  @Test
+  void shouldExposeBrowser() {
+    Page page = launchPersistent();
+    BrowserContext context = page.context();
+    Browser browser = context.browser();
+    assertFalse(browser.version().isEmpty());
+    Page page2 = browser.newPage();
+    page2.navigate("data:text/html,<html><title>Title</title></html>");
+    assertEquals("Title", page2.title());
+    browser.close();
+    assertEquals(0, context.pages().size());
+    // Next line should not throw.
+    context.close();
+  }
+}

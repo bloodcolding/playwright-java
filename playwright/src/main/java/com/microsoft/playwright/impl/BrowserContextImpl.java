@@ -42,7 +42,7 @@ import static java.nio.file.Files.readAllBytes;
 import static java.util.Arrays.asList;
 
 class BrowserContextImpl extends ChannelOwner implements BrowserContext {
-  private final BrowserImpl browser;
+  protected BrowserImpl browser;
   private final TracingImpl tracing;
   private final APIRequestContextImpl request;
   private final ClockImpl clock;
@@ -50,7 +50,8 @@ class BrowserContextImpl extends ChannelOwner implements BrowserContext {
   final List<PageImpl> backgroundPages = new ArrayList<>();
 
   final Router routes = new Router();
-  private boolean closeWasCalled;
+  final WebSocketRouter webSocketRoutes = new WebSocketRouter();
+  private boolean closingOrClosed;
   private final WaitableEvent<EventType, ?> closePromise;
   final Map<String, BindingCallback> bindings = new HashMap<>();
   PageImpl ownerPage;
@@ -68,8 +69,6 @@ class BrowserContextImpl extends ChannelOwner implements BrowserContext {
   }
   private final ListenerCollection<EventType> listeners = new ListenerCollection<>(eventSubscriptions(), this);
   final TimeoutSettings timeoutSettings = new TimeoutSettings();
-  Path videosDir;
-  URL baseUrl;
   final Map<String, HarRecorder> harRecorders = new HashMap<>();
 
   static class HarRecorder {
@@ -97,29 +96,30 @@ class BrowserContextImpl extends ChannelOwner implements BrowserContext {
 
   BrowserContextImpl(ChannelOwner parent, String type, String guid, JsonObject initializer) {
     super(parent, type, guid, initializer);
-    if (parent instanceof BrowserImpl) {
-      browser = (BrowserImpl) parent;
-    } else {
-      browser = null;
-    }
     tracing = connection.getExistingObject(initializer.getAsJsonObject("tracing").get("guid").getAsString());
     request = connection.getExistingObject(initializer.getAsJsonObject("requestContext").get("guid").getAsString());
+    request.timeoutSettings = timeoutSettings;
     clock = new ClockImpl(this);
     closePromise = new WaitableEvent<>(listeners, EventType.CLOSE);
   }
 
-  void setRecordHar(Path path, HarContentPolicy policy) {
-    if (path != null) {
-      harRecorders.put("", new HarRecorder(path, policy));
+  Path videosDir() {
+    JsonObject recordVideo = initializer.getAsJsonObject("options").getAsJsonObject("recordVideo");
+    if (recordVideo == null) {
+      return null;
     }
+    return Paths.get(recordVideo.get("dir").getAsString());
   }
 
-  void setBaseUrl(String spec) {
-    try {
-      this.baseUrl = new URL(spec);
-    } catch (MalformedURLException e) {
-      this.baseUrl = null;
+  URL baseUrl() {
+    JsonElement url = initializer.getAsJsonObject("options").get("baseURL");
+    if (url != null) {
+      try {
+        return new URL(url.getAsString());
+      } catch (MalformedURLException e) {
+      }
     }
+    return null;
   }
 
   String effectiveCloseReason() {
@@ -261,7 +261,7 @@ class BrowserContextImpl extends ChannelOwner implements BrowserContext {
   public CDPSession newCDPSession(Page page) {
     JsonObject params = new JsonObject();
     params.add("page", ((PageImpl) page).toProtocolRef());
-    JsonObject result = sendMessage("newCDPSession", params).getAsJsonObject();
+    JsonObject result = sendMessage("newCDPSession", params, NO_TIMEOUT).getAsJsonObject();
     return connection.getExistingObject(result.getAsJsonObject("session").get("guid").getAsString());
   }
 
@@ -269,23 +269,14 @@ class BrowserContextImpl extends ChannelOwner implements BrowserContext {
   public CDPSession newCDPSession(Frame frame) {
     JsonObject params = new JsonObject();
     params.add("frame", ((FrameImpl) frame).toProtocolRef());
-    JsonObject result = sendMessage("newCDPSession", params).getAsJsonObject();
+    JsonObject result = sendMessage("newCDPSession", params, NO_TIMEOUT).getAsJsonObject();
     return connection.getExistingObject(result.getAsJsonObject("session").get("guid").getAsString());
   }
 
   @Override
   public void close(CloseOptions options) {
-    withLogging("BrowserContext.close", () -> closeImpl(options));
-  }
-
-  @Override
-  public List<Cookie> cookies(String url) {
-    return cookies(url == null ? new ArrayList<>() : Collections.singletonList(url));
-  }
-
-  private void closeImpl(CloseOptions options) {
-    if (!closeWasCalled) {
-      closeWasCalled = true;
+    if (!closingOrClosed) {
+      closingOrClosed = true;
       if (options == null) {
         options = new CloseOptions();
       }
@@ -294,7 +285,7 @@ class BrowserContextImpl extends ChannelOwner implements BrowserContext {
       for (Map.Entry<String, HarRecorder> entry : harRecorders.entrySet()) {
         JsonObject params = new JsonObject();
         params.addProperty("harId", entry.getKey());
-        JsonObject json = sendMessage("harExport", params).getAsJsonObject();
+        JsonObject json = sendMessage("harExport", params, NO_TIMEOUT).getAsJsonObject();
         ArtifactImpl artifact = connection.getExistingObject(json.getAsJsonObject("artifact").get("guid").getAsString());
         // Server side will compress artifact if content is attach or if file is .zip.
         HarRecorder harParams = entry.getValue();
@@ -306,53 +297,51 @@ class BrowserContextImpl extends ChannelOwner implements BrowserContext {
           JsonObject unzipParams = new JsonObject();
           unzipParams.addProperty("zipFile", tmpPath);
           unzipParams.addProperty("harFile", harParams.path.toString());
-          connection.localUtils.sendMessage("harUnzip", unzipParams);
+          connection.localUtils.sendMessage("harUnzip", unzipParams, NO_TIMEOUT);
         } else {
           artifact.saveAs(harParams.path);
         }
         artifact.delete();
       }
       JsonObject params = gson().toJsonTree(options).getAsJsonObject();
-      sendMessage("close", params);
+      sendMessage("close", params, NO_TIMEOUT);
     }
     runUntil(() -> {}, closePromise);
   }
 
   @Override
+  public List<Cookie> cookies(String url) {
+    return cookies(url == null ? new ArrayList<>() : Collections.singletonList(url));
+  }
+
+
+  @Override
   public void addCookies(List<Cookie> cookies) {
-    withLogging("BrowserContext.addCookies", () -> {
-      JsonObject params = new JsonObject();
-      params.add("cookies", gson().toJsonTree(cookies));
-      sendMessage("addCookies", params);
-    });
+    JsonObject params = new JsonObject();
+    params.add("cookies", gson().toJsonTree(cookies));
+    sendMessage("addCookies", params, NO_TIMEOUT);
   }
 
   @Override
   public void addInitScript(String script) {
-    withLogging("BrowserContext.addInitScript", () -> addInitScriptImpl(script));
+    JsonObject params = new JsonObject();
+    params.addProperty("source", script);
+    sendMessage("addInitScript", params, NO_TIMEOUT);
   }
 
   @Override
   public void addInitScript(Path path) {
-    withLogging("BrowserContext.addInitScript", () -> {
-      try {
-        byte[] bytes = readAllBytes(path);
-        addInitScriptImpl(new String(bytes, UTF_8));
-      } catch (IOException e) {
-        throw new PlaywrightException("Failed to read script from file", e);
-      }
-    });
+    try {
+      byte[] bytes = readAllBytes(path);
+      addInitScript(new String(bytes, UTF_8));
+    } catch (IOException e) {
+      throw new PlaywrightException("Failed to read script from file", e);
+    }
   }
 
   @Override
   public List<Page> backgroundPages() {
     return new ArrayList<>(backgroundPages);
-  }
-
-  private void addInitScriptImpl(String script) {
-    JsonObject params = new JsonObject();
-    params.addProperty("source", script);
-    sendMessage("addInitScript", params);
   }
 
   @Override
@@ -362,10 +351,6 @@ class BrowserContextImpl extends ChannelOwner implements BrowserContext {
 
   @Override
   public void clearCookies(ClearCookiesOptions options) {
-    withLogging("BrowserContext.clearCookies", () -> clearCookiesImpl(options));
-  }
-
-  private void clearCookiesImpl(ClearCookiesOptions options) {
     if (options == null) {
       options = new ClearCookiesOptions();
     }
@@ -373,7 +358,7 @@ class BrowserContextImpl extends ChannelOwner implements BrowserContext {
     setStringOrRegex(params, "name", options.name);
     setStringOrRegex(params, "domain", options.domain);
     setStringOrRegex(params, "path", options.path);
-    sendMessage("clearCookies", params);
+    sendMessage("clearCookies", params, NO_TIMEOUT);
   }
 
   private static void setStringOrRegex(JsonObject params, String name, Object value) {
@@ -388,28 +373,24 @@ class BrowserContextImpl extends ChannelOwner implements BrowserContext {
 
   @Override
   public void clearPermissions() {
-    withLogging("BrowserContext.clearPermissions", () -> sendMessage("clearPermissions"));
+    sendMessage("clearPermissions");
   }
 
   @Override
   public List<Cookie> cookies(List<String> urls) {
-    return withLogging("BrowserContext.cookies", () -> cookiesImpl(urls));
-  }
-
-  private List<Cookie> cookiesImpl(List<String> urls) {
     JsonObject params = new JsonObject();
     if (urls == null) {
       urls = new ArrayList<>();
     }
     params.add("urls", gson().toJsonTree(urls));
-    JsonObject json = sendMessage("cookies", params).getAsJsonObject();
+    JsonObject json = sendMessage("cookies", params, NO_TIMEOUT).getAsJsonObject();
     Cookie[] cookies = gson().fromJson(json.getAsJsonArray("cookies"), Cookie[].class);
     return asList(cookies);
   }
 
   @Override
   public void exposeBinding(String name, BindingCallback playwrightBinding, ExposeBindingOptions options) {
-    withLogging("BrowserContext.exposeBinding", () -> exposeBindingImpl(name, playwrightBinding, options));
+    exposeBindingImpl(name, playwrightBinding, options);
   }
 
   private void exposeBindingImpl(String name, BindingCallback playwrightBinding, ExposeBindingOptions options) {
@@ -428,21 +409,16 @@ class BrowserContextImpl extends ChannelOwner implements BrowserContext {
     if (options != null && options.handle != null && options.handle) {
       params.addProperty("needsHandle", true);
     }
-    sendMessage("exposeBinding", params);
+    sendMessage("exposeBinding", params, NO_TIMEOUT);
   }
 
   @Override
   public void exposeFunction(String name, FunctionCallback playwrightFunction) {
-    withLogging("BrowserContext.exposeFunction",
-      () -> exposeBindingImpl(name, (BindingCallback.Source source, Object... args) -> playwrightFunction.call(args), null));
+    exposeBindingImpl(name, (BindingCallback.Source source, Object... args) -> playwrightFunction.call(args), null);
   }
 
   @Override
   public void grantPermissions(List<String> permissions, GrantPermissionsOptions options) {
-    withLogging("BrowserContext.grantPermissions", () -> grantPermissionsImpl(permissions, options));
-  }
-
-  private void grantPermissionsImpl(List<String> permissions, GrantPermissionsOptions options) {
     if (options == null) {
       options = new GrantPermissionsOptions();
     }
@@ -451,15 +427,11 @@ class BrowserContextImpl extends ChannelOwner implements BrowserContext {
     }
     JsonObject params = gson().toJsonTree(options).getAsJsonObject();
     params.add("permissions", gson().toJsonTree(permissions));
-    sendMessage("grantPermissions", params);
+    sendMessage("grantPermissions", params, NO_TIMEOUT);
   }
 
   @Override
   public PageImpl newPage() {
-    return withLogging("BrowserContext.newPage", () -> newPageImpl());
-  }
-
-  private PageImpl newPageImpl() {
     if (ownerPage != null) {
       throw new PlaywrightException("Please use browser.newContext()");
     }
@@ -479,7 +451,7 @@ class BrowserContextImpl extends ChannelOwner implements BrowserContext {
 
   @Override
   public void route(String url, Consumer<Route> handler, RouteOptions options) {
-    route(new UrlMatcher(baseUrl, url), handler, options);
+    route(UrlMatcher.forGlob(baseUrl(), url, this.connection.localUtils, false), handler, options);
   }
 
   @Override
@@ -498,116 +470,118 @@ class BrowserContextImpl extends ChannelOwner implements BrowserContext {
       options = new RouteFromHAROptions();
     }
     if (options.update != null && options.update) {
-      recordIntoHar(null, har, options);
+      recordIntoHar(null, har, options, null);
       return;
     }
-    UrlMatcher matcher = UrlMatcher.forOneOf(baseUrl, options.url);
+    UrlMatcher matcher = UrlMatcher.forOneOf(baseUrl(), options.url, this.connection.localUtils, false);
     HARRouter harRouter = new HARRouter(connection.localUtils, har, options.notFound);
     onClose(context -> harRouter.dispose());
     route(matcher, route -> harRouter.handle(route), null);
   }
 
   private void route(UrlMatcher matcher, Consumer<Route> handler, RouteOptions options) {
-    withLogging("BrowserContext.route", () -> {
-      routes.add(matcher, handler, options == null ? null : options.times);
-      updateInterceptionPatterns();
-    });
+    routes.add(matcher, handler, options == null ? null : options.times);
+    updateInterceptionPatterns();
   }
 
-  void recordIntoHar(PageImpl page, Path har, RouteFromHAROptions options) {
+  @Override
+  public void routeWebSocket(String url, Consumer<WebSocketRoute> handler) {
+    routeWebSocketImpl(UrlMatcher.forGlob(baseUrl(), url, this.connection.localUtils, true), handler);
+  }
+
+  @Override
+  public void routeWebSocket(Pattern pattern, Consumer<WebSocketRoute> handler) {
+    routeWebSocketImpl(new UrlMatcher(pattern), handler);
+  }
+
+  @Override
+  public void routeWebSocket(Predicate<String> predicate, Consumer<WebSocketRoute> handler) {
+    routeWebSocketImpl(new UrlMatcher(predicate), handler);
+  }
+
+  private void routeWebSocketImpl(UrlMatcher matcher, Consumer<WebSocketRoute> handler) {
+    webSocketRoutes.add(matcher, handler);
+    updateWebSocketInterceptionPatterns();
+  }
+
+  void recordIntoHar(PageImpl page, Path har, RouteFromHAROptions options, HarContentPolicy contentPolicy) {
+    if (contentPolicy == null) {
+      contentPolicy = Utils.convertType(options.updateContent, HarContentPolicy.class);;
+    }
+    if (contentPolicy == null) {
+      contentPolicy = HarContentPolicy.ATTACH;
+    }
+
     JsonObject params = new JsonObject();
     if (page != null) {
       params.add("page", page.toProtocolRef());
     }
-    JsonObject jsonOptions = new JsonObject();
-    jsonOptions.addProperty("path", har.toAbsolutePath().toString());
-    jsonOptions.addProperty("content", options.updateContent == null ?
-      HarContentPolicy.ATTACH.name().toLowerCase() :
-      options.updateContent.name().toLowerCase());
-    jsonOptions.addProperty("mode", options.updateMode == null ?
-      HarMode.MINIMAL.name().toLowerCase() :
-      options.updateMode.name().toLowerCase());
-    addHarUrlFilter(jsonOptions, options.url);
-    params.add("options", jsonOptions);
-    JsonObject json = sendMessage("harStart", params).getAsJsonObject();
+    JsonObject recordHarArgs = new JsonObject();
+    recordHarArgs.addProperty("zip", har.toString().endsWith(".zip"));
+    recordHarArgs.addProperty("content", contentPolicy.name().toLowerCase());
+    recordHarArgs.addProperty("mode", (options.updateMode == null ? HarMode.MINIMAL : options.updateMode).name().toLowerCase());
+    addHarUrlFilter(recordHarArgs, options.url);
+
+    params.add("options", recordHarArgs);
+    JsonObject json = sendMessage("harStart", params, NO_TIMEOUT).getAsJsonObject();
     String harId = json.get("harId").getAsString();
-    harRecorders.put(harId, new HarRecorder(har, HarContentPolicy.ATTACH));
+    harRecorders.put(harId, new HarRecorder(har, contentPolicy));
   }
 
   @Override
   public void setDefaultNavigationTimeout(double timeout) {
-    setDefaultNavigationTimeoutImpl(timeout);
-  }
-
-  void setDefaultNavigationTimeoutImpl(Double timeout) {
-    withLogging("BrowserContext.setDefaultNavigationTimeout", () -> {
-      timeoutSettings.setDefaultNavigationTimeout(timeout);
-      JsonObject params = new JsonObject();
-      params.addProperty("timeout", timeout);
-      sendMessage("setDefaultNavigationTimeoutNoReply", params);
-    });
+    timeoutSettings.setDefaultNavigationTimeout(timeout);
   }
 
   @Override
   public void setDefaultTimeout(double timeout) {
-    setDefaultTimeoutImpl(timeout);
-  }
-
-  void setDefaultTimeoutImpl(Double timeout) {
-    withLogging("BrowserContext.setDefaultTimeout", () -> {
-      timeoutSettings.setDefaultTimeout(timeout);
-      JsonObject params = new JsonObject();
-      params.addProperty("timeout", timeout);
-      sendMessage("setDefaultTimeoutNoReply", params);
-    });
+    timeoutSettings.setDefaultTimeout(timeout);
   }
 
   @Override
   public void setExtraHTTPHeaders(Map<String, String> headers) {
-    withLogging("BrowserContext.setExtraHTTPHeaders", () -> {
-      JsonObject params = new JsonObject();
-      JsonArray jsonHeaders = new JsonArray();
-      for (Map.Entry<String, String> e : headers.entrySet()) {
-        JsonObject header = new JsonObject();
-        header.addProperty("name", e.getKey());
-        header.addProperty("value", e.getValue());
-        jsonHeaders.add(header);
-      }
-      params.add("headers", jsonHeaders);
-      sendMessage("setExtraHTTPHeaders", params);
-    });
+    JsonObject params = new JsonObject();
+    JsonArray jsonHeaders = new JsonArray();
+    for (Map.Entry<String, String> e : headers.entrySet()) {
+      JsonObject header = new JsonObject();
+      header.addProperty("name", e.getKey());
+      header.addProperty("value", e.getValue());
+      jsonHeaders.add(header);
+    }
+    params.add("headers", jsonHeaders);
+    sendMessage("setExtraHTTPHeaders", params, NO_TIMEOUT);
   }
 
   @Override
   public void setGeolocation(Geolocation geolocation) {
-    withLogging("BrowserContext.setGeolocation", () -> {
-      JsonObject params = new JsonObject();
-      if (geolocation != null) {
-        params.add("geolocation", gson().toJsonTree(geolocation));
-      }
-      sendMessage("setGeolocation", params);
-    });
+    JsonObject params = new JsonObject();
+    if (geolocation != null) {
+      params.add("geolocation", gson().toJsonTree(geolocation));
+    }
+    sendMessage("setGeolocation", params, NO_TIMEOUT);
   }
 
   @Override
   public void setOffline(boolean offline) {
-    withLogging("BrowserContext.setOffline", () -> {
-      JsonObject params = new JsonObject();
-      params.addProperty("offline", offline);
-      sendMessage("setOffline", params);
-    });
+    JsonObject params = new JsonObject();
+    params.addProperty("offline", offline);
+    sendMessage("setOffline", params, NO_TIMEOUT);
   }
 
   @Override
   public String storageState(StorageStateOptions options) {
-    return withLogging("BrowserContext.storageState", () -> {
-      JsonElement json = sendMessage("storageState");
-      String storageState = json.toString();
-      if (options != null && options.path != null) {
-        Utils.writeToFile(storageState.getBytes(StandardCharsets.UTF_8), options.path);
-      }
-      return storageState;
-    });
+    if (options == null) {
+      options = new StorageStateOptions();
+    }
+    JsonObject params = gson().toJsonTree(options).getAsJsonObject();
+    params.remove("path");
+    JsonElement json = sendMessage("storageState", params, NO_TIMEOUT);
+
+    String storageState = json.toString();
+    if (options.path != null) {
+      Utils.writeToFile(storageState.getBytes(StandardCharsets.UTF_8), options.path);
+    }
+    return storageState;
   }
 
   @Override
@@ -617,15 +591,13 @@ class BrowserContextImpl extends ChannelOwner implements BrowserContext {
 
   @Override
   public void unrouteAll() {
-    withLogging("BrowserContext.unrouteAll", () -> {
-      routes.removeAll();
-      updateInterceptionPatterns();
-    });
+    routes.removeAll();
+    updateInterceptionPatterns();
   }
 
   @Override
   public void unroute(String url, Consumer<Route> handler) {
-    unroute(new UrlMatcher(this.baseUrl, url), handler);
+    unroute(UrlMatcher.forGlob(this.baseUrl(), url, this.connection.localUtils, false), handler);
   }
 
   @Override
@@ -671,14 +643,16 @@ class BrowserContextImpl extends ChannelOwner implements BrowserContext {
   }
 
   private void unroute(UrlMatcher matcher, Consumer<Route> handler) {
-    withLogging("BrowserContext.unroute", () -> {
-      routes.remove(matcher, handler);
-      updateInterceptionPatterns();
-    });
+    routes.remove(matcher, handler);
+    updateInterceptionPatterns();
   }
 
   private void updateInterceptionPatterns() {
-    sendMessage("setNetworkInterceptionPatterns", routes.interceptionPatterns());
+    sendMessage("setNetworkInterceptionPatterns", routes.interceptionPatterns(), NO_TIMEOUT);
+  }
+
+  private void updateWebSocketInterceptionPatterns() {
+    sendMessage("setWebSocketInterceptionPatterns", webSocketRoutes.interceptionPatterns(), NO_TIMEOUT);
   }
 
   void handleRoute(RouteImpl route) {
@@ -688,6 +662,12 @@ class BrowserContextImpl extends ChannelOwner implements BrowserContext {
     }
     if (handled == Router.HandleResult.NoMatchingHandler || handled == Router.HandleResult.Fallback) {
       route.resume(null, true);
+    }
+  }
+
+  void handleWebSocketRoute(WebSocketRouteImpl route) {
+    if (!webSocketRoutes.handle(route)) {
+      route.connectToServer();
     }
   }
 
@@ -730,6 +710,9 @@ class BrowserContextImpl extends ChannelOwner implements BrowserContext {
       RouteImpl route = connection.getExistingObject(params.getAsJsonObject("route").get("guid").getAsString());
       route.browserContext = this;
       handleRoute(route);
+    } else if ("webSocketRoute".equals(event)) {
+      WebSocketRouteImpl route = connection.getExistingObject(params.getAsJsonObject("webSocketRoute").get("guid").getAsString());
+      handleWebSocketRoute(route);
     } else if ("page".equals(event)) {
       PageImpl page = connection.getExistingObject(params.getAsJsonObject("page").get("guid").getAsString());
       pages.add(page);
@@ -822,8 +805,10 @@ class BrowserContextImpl extends ChannelOwner implements BrowserContext {
   }
 
   void didClose() {
+    closingOrClosed = true;
     if (browser != null) {
       browser.contexts.remove(this);
+      browser.browserType.playwright.selectors.contextsForSelectors.remove(this);
     }
     listeners.notify(EventType.CLOSE, this);
   }
@@ -832,7 +817,49 @@ class BrowserContextImpl extends ChannelOwner implements BrowserContext {
     JsonObject params = new JsonObject();
     params.addProperty("name", name);
     params.addProperty("lastModifiedMs", lastModifiedMs);
-    JsonObject json = sendMessage("createTempFile", params).getAsJsonObject();
+    JsonObject json = sendMessage("createTempFile", params, NO_TIMEOUT).getAsJsonObject();
     return connection.getExistingObject(json.getAsJsonObject("writableStream").get("guid").getAsString());
+  }
+
+  protected void initializeHarFromOptions(Browser.NewContextOptions options) {
+    if (options.recordHarPath == null) {
+      if (options.recordHarOmitContent != null) {
+        throw new PlaywrightException("recordHarOmitContent is set but recordHarPath is null");
+      }
+      if (options.recordHarUrlFilter != null) {
+        throw new PlaywrightException("recordHarUrlFilter is set but recordHarPath is null");
+      }
+      if (options.recordHarMode != null) {
+        throw new PlaywrightException("recordHarMode is set but recordHarPath is null");
+      }
+      if (options.recordHarContent != null) {
+        throw new PlaywrightException("recordHarContent is set but recordHarPath is null");
+      }
+      return;
+    }
+
+    HarContentPolicy contentPolicy = options.recordHarContent;
+    if (contentPolicy == null && options.recordHarOmitContent != null && options.recordHarOmitContent == true) {
+      contentPolicy = HarContentPolicy.OMIT;
+    }
+    if (contentPolicy == null) {
+      contentPolicy = options.recordHarPath.endsWith(".zip") ? HarContentPolicy.ATTACH : HarContentPolicy.EMBED;
+    }
+    RouteFromHAROptions routeFromHAROptions = new RouteFromHAROptions();
+
+    if (options.recordHarUrlFilter instanceof String) {
+      routeFromHAROptions.setUrl((String) options.recordHarUrlFilter);
+    } else if (options.recordHarUrlFilter instanceof Pattern) {
+      routeFromHAROptions.setUrl((Pattern) options.recordHarUrlFilter);
+    }
+
+    if (options.recordHarMode != null) {
+      routeFromHAROptions.updateMode = options.recordHarMode;
+    } else {
+      routeFromHAROptions.updateMode = HarMode.FULL;
+    }
+    routeFromHAROptions.url = options.recordHarUrlFilter;
+
+    recordIntoHar(null, options.recordHarPath, routeFromHAROptions, contentPolicy);
   }
 }

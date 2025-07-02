@@ -74,16 +74,12 @@ public class FrameImpl extends ChannelOwner implements Frame {
 
   @Override
   public ElementHandle querySelector(String selector, QuerySelectorOptions options) {
-    return withLogging("Frame.querySelector", () -> querySelectorImpl(selector, options));
-  }
-
-  ElementHandleImpl querySelectorImpl(String selector, QuerySelectorOptions options) {
     if (options == null) {
       options = new QuerySelectorOptions();
     }
     JsonObject params = gson().toJsonTree(options).getAsJsonObject();
     params.addProperty("selector", selector);
-    JsonElement json = sendMessage("querySelector", params);
+    JsonElement json = sendMessage("querySelector", params, NO_TIMEOUT);
     JsonObject element = json.getAsJsonObject().getAsJsonObject("element");
     if (element == null) {
       return null;
@@ -93,7 +89,18 @@ public class FrameImpl extends ChannelOwner implements Frame {
 
   @Override
   public List<ElementHandle> querySelectorAll(String selector) {
-    return withLogging("Frame.querySelectorAll", () -> querySelectorAllImpl(selector));
+    JsonObject params = new JsonObject();
+    params.addProperty("selector", selector);
+    JsonElement json = sendMessage("querySelectorAll", params, NO_TIMEOUT);
+    JsonArray elements = json.getAsJsonObject().getAsJsonArray("elements");
+    if (elements == null) {
+      return null;
+    }
+    List<ElementHandle> handles = new ArrayList<>();
+    for (JsonElement item : elements) {
+      handles.add(connection.getExistingObject(item.getAsJsonObject().get("guid").getAsString()));
+    }
+    return handles;
   }
 
   @Override
@@ -110,7 +117,7 @@ public class FrameImpl extends ChannelOwner implements Frame {
 
   @Override
   public List<String> selectOption(String selector, String[] values, SelectOptionOptions options) {
-    return withLogging("Frame.selectOption", () -> selectOptionImpl(selector, values, options));
+    return selectOptionImpl(selector, values, options);
   }
 
   @Override
@@ -119,24 +126,10 @@ public class FrameImpl extends ChannelOwner implements Frame {
     return selectOption(selector, values, options);
   }
 
-  List<ElementHandle> querySelectorAllImpl(String selector) {
-    JsonObject params = new JsonObject();
-    params.addProperty("selector", selector);
-    JsonElement json = sendMessage("querySelectorAll", params);
-    JsonArray elements = json.getAsJsonObject().getAsJsonArray("elements");
-    if (elements == null) {
-      return null;
-    }
-    List<ElementHandle> handles = new ArrayList<>();
-    for (JsonElement item : elements) {
-      handles.add(connection.getExistingObject(item.getAsJsonObject().get("guid").getAsString()));
-    }
-    return handles;
-  }
 
   @Override
   public Object evalOnSelector(String selector, String pageFunction, Object arg, EvalOnSelectorOptions options) {
-    return withLogging("Frame.evalOnSelector", () -> evalOnSelectorImpl(selector, pageFunction, arg, options));
+    return evalOnSelectorImpl(selector, pageFunction, arg, options);
   }
 
   Object evalOnSelectorImpl(String selector, String pageFunction, Object arg, EvalOnSelectorOptions options) {
@@ -147,14 +140,14 @@ public class FrameImpl extends ChannelOwner implements Frame {
     params.addProperty("selector", selector);
     params.addProperty("expression", pageFunction);
     params.add("arg", gson().toJsonTree(serializeArgument(arg)));
-    JsonElement json = sendMessage("evalOnSelector", params);
+    JsonElement json = sendMessage("evalOnSelector", params, NO_TIMEOUT);
     SerializedValue value = gson().fromJson(json.getAsJsonObject().get("value"), SerializedValue.class);
     return deserialize(value);
   }
 
   @Override
   public Object evalOnSelectorAll(String selector, String pageFunction, Object arg) {
-    return withLogging("Frame.evalOnSelectorAll", () -> evalOnSelectorAllImpl(selector, pageFunction, arg));
+    return evalOnSelectorAllImpl(selector, pageFunction, arg);
   }
 
   Object evalOnSelectorAllImpl(String selector, String pageFunction, Object arg) {
@@ -162,14 +155,14 @@ public class FrameImpl extends ChannelOwner implements Frame {
     params.addProperty("selector", selector);
     params.addProperty("expression", pageFunction);
     params.add("arg", gson().toJsonTree(serializeArgument(arg)));
-    JsonElement json = sendMessage("evalOnSelectorAll", params);
+    JsonElement json = sendMessage("evalOnSelectorAll", params, NO_TIMEOUT);
     SerializedValue value = gson().fromJson(json.getAsJsonObject().get("value"), SerializedValue.class);
     return deserialize(value);
   }
 
   @Override
   public ElementHandle addScriptTag(AddScriptTagOptions options){
-    return withLogging("Frame.addScriptTag", () -> addScriptTagImpl(options));
+    return addScriptTagImpl(options);
   }
 
   ElementHandle addScriptTagImpl(AddScriptTagOptions options) {
@@ -189,13 +182,13 @@ public class FrameImpl extends ChannelOwner implements Frame {
       content = addSourceUrlToScript(content, options.path);
       jsonOptions.addProperty("content", content);
     }
-    JsonElement json = sendMessage("addScriptTag", jsonOptions);
+    JsonElement json = sendMessage("addScriptTag", jsonOptions, NO_TIMEOUT);
     return connection.getExistingObject(json.getAsJsonObject().getAsJsonObject("element").get("guid").getAsString());
   }
 
   @Override
   public ElementHandle addStyleTag(AddStyleTagOptions options){
-    return withLogging("Frame.addStyleTag", () -> addStyleTagImpl(options));
+    return addStyleTagImpl(options);
   }
 
   ElementHandle addStyleTagImpl(AddStyleTagOptions options) {
@@ -215,22 +208,18 @@ public class FrameImpl extends ChannelOwner implements Frame {
       content += "/*# sourceURL=" + options.path.toString().replace("\n", "") + "*/";
       jsonOptions.addProperty("content", content);
     }
-    JsonElement json = sendMessage("addStyleTag", jsonOptions);
+    JsonElement json = sendMessage("addStyleTag", jsonOptions, NO_TIMEOUT);
     return connection.getExistingObject(json.getAsJsonObject().getAsJsonObject("element").get("guid").getAsString());
   }
 
   @Override
   public void check(String selector, CheckOptions options){
-    withLogging("Frame.check", () -> checkImpl(selector, options));
-  }
-
-  void checkImpl(String selector, CheckOptions options) {
     if (options == null) {
       options = new CheckOptions();
     }
     JsonObject params = gson().toJsonTree(options).getAsJsonObject();
     params.addProperty("selector", selector);
-    sendMessage("check", params);
+    sendMessage("check", params, timeout(options.timeout));
   }
 
   @Override
@@ -240,7 +229,7 @@ public class FrameImpl extends ChannelOwner implements Frame {
 
   @Override
   public void click(String selector, ClickOptions options) {
-    withLogging("Frame.click", () -> clickImpl(selector, options));
+    clickImpl(selector, options);
   }
 
   void clickImpl(String selector, ClickOptions options) {
@@ -249,38 +238,26 @@ public class FrameImpl extends ChannelOwner implements Frame {
     }
     JsonObject params = gson().toJsonTree(options).getAsJsonObject();
     params.addProperty("selector", selector);
-    sendMessage("click", params);
+    sendMessage("click", params, timeout(options.timeout));
   }
 
   @Override
   public String content() {
-    return withLogging("Frame.content", () -> contentImpl());
-  }
-
-  String contentImpl() {
     return sendMessage("content").getAsJsonObject().get("value").getAsString();
   }
 
   @Override
   public void dblclick(String selector, DblclickOptions options) {
-    withLogging("Frame.dblclick", () -> dblclickImpl(selector, options));
-  }
-
-  void dblclickImpl(String selector, DblclickOptions options) {
     if (options == null) {
       options = new DblclickOptions();
     }
     JsonObject params = gson().toJsonTree(options).getAsJsonObject();
     params.addProperty("selector", selector);
-    sendMessage("dblclick", params);
+    sendMessage("dblclick", params, timeout(options.timeout));
   }
 
   @Override
   public void dispatchEvent(String selector, String type, Object eventInit, DispatchEventOptions options) {
-    withLogging("Frame.dispatchEvent", () -> dispatchEventImpl(selector, type, eventInit, options));
-  }
-
-  void dispatchEventImpl(String selector, String type, Object eventInit, DispatchEventOptions options) {
     if (options == null) {
       options = new DispatchEventOptions();
     }
@@ -288,71 +265,55 @@ public class FrameImpl extends ChannelOwner implements Frame {
     params.addProperty("selector", selector);
     params.addProperty("type", type);
     params.add("eventInit", gson().toJsonTree(serializeArgument(eventInit)));
-    sendMessage("dispatchEvent", params);
+    sendMessage("dispatchEvent", params, timeout(options.timeout));
   }
 
   @Override
   public Object evaluate(String expression, Object arg) {
-    return withLogging("Frame.evaluate", () -> evaluateImpl(expression, arg));
-  }
-
-  Object evaluateImpl(String expression, Object arg) {
     JsonObject params = new JsonObject();
     params.addProperty("expression", expression);
     params.addProperty("world", "main");
     params.add("arg", gson().toJsonTree(serializeArgument(arg)));
-    JsonElement json = sendMessage("evaluateExpression", params);
+    JsonElement json = sendMessage("evaluateExpression", params, NO_TIMEOUT);
     SerializedValue value = gson().fromJson(json.getAsJsonObject().get("value"), SerializedValue.class);
     return deserialize(value);
   }
 
   @Override
   public JSHandle evaluateHandle(String pageFunction, Object arg) {
-    return withLogging("Frame.evaluateHandle", () -> evaluateHandleImpl(pageFunction, arg));
-  }
-
-  JSHandle evaluateHandleImpl(String pageFunction, Object arg) {
     JsonObject params = new JsonObject();
     params.addProperty("expression", pageFunction);
     params.addProperty("world", "main");
     params.add("arg", gson().toJsonTree(serializeArgument(arg)));
-    JsonElement json = sendMessage("evaluateExpressionHandle", params);
+    JsonElement json = sendMessage("evaluateExpressionHandle", params, NO_TIMEOUT);
     return connection.getExistingObject(json.getAsJsonObject().getAsJsonObject("handle").get("guid").getAsString());
   }
 
   @Override
   public void fill(String selector, String value, FillOptions options) {
-    withLogging("Frame.fill", () -> fillImpl(selector, value, options));
-  }
-
-  void fillImpl(String selector, String value, FillOptions options) {
     if (options == null) {
       options = new FillOptions();
     }
     JsonObject params = gson().toJsonTree(options).getAsJsonObject();
     params.addProperty("selector", selector);
     params.addProperty("value", value);
-    sendMessage("fill", params);
+    sendMessage("fill", params, timeout(options.timeout));
   }
 
   @Override
   public void focus(String selector, FocusOptions options) {
-    withLogging("Frame.focus", () -> focusImpl(selector, options));
-  }
-
-  void focusImpl(String selector, FocusOptions options) {
     if (options == null) {
       options = new FocusOptions();
     }
     JsonObject params = gson().toJsonTree(options).getAsJsonObject();
     params.addProperty("selector", selector);
-    sendMessage("focus", params);
+    sendMessage("focus", params, timeout(options.timeout));
   }
 
   @Override
   public ElementHandle frameElement() {
-    return withLogging("Frame.frameElement", () -> frameElementImpl());
-
+    JsonObject json = sendMessage("frameElement").getAsJsonObject();
+    return connection.getExistingObject(json.getAsJsonObject("element").get("guid").getAsString());
   }
 
   @Override
@@ -360,14 +321,9 @@ public class FrameImpl extends ChannelOwner implements Frame {
     return new FrameLocatorImpl(this, selector);
   }
 
-  ElementHandle frameElementImpl() {
-    JsonObject json = sendMessage("frameElement").getAsJsonObject();
-    return connection.getExistingObject(json.getAsJsonObject("element").get("guid").getAsString());
-  }
-
   @Override
   public String getAttribute(String selector, String name, GetAttributeOptions options) {
-    return withLogging("Frame.getAttribute", () -> getAttributeImpl(selector, name, options));
+    return getAttributeImpl(selector, name, options);
   }
 
   @Override
@@ -442,7 +398,7 @@ public class FrameImpl extends ChannelOwner implements Frame {
     JsonObject params = gson().toJsonTree(options).getAsJsonObject();
     params.addProperty("selector", selector);
     params.addProperty("name", name);
-    JsonObject json = sendMessage("getAttribute", params).getAsJsonObject();
+    JsonObject json = sendMessage("getAttribute", params, timeout(options.timeout)).getAsJsonObject();
     if (json.has("value")) {
       return json.get("value").getAsString();
     }
@@ -451,7 +407,7 @@ public class FrameImpl extends ChannelOwner implements Frame {
 
   @Override
   public ResponseImpl navigate(String url, NavigateOptions options) {
-    return withLogging("Page.navigate", () -> navigateImpl(url, options));
+    return navigateImpl(url, options);
   }
 
   ResponseImpl navigateImpl(String url, NavigateOptions options) {
@@ -460,7 +416,7 @@ public class FrameImpl extends ChannelOwner implements Frame {
     }
     JsonObject params = gson().toJsonTree(options).getAsJsonObject();
     params.addProperty("url", url);
-    JsonElement result = sendMessage("goto", params);
+    JsonElement result = sendMessage("goto", params, navigationTimeout(options.timeout));
     JsonObject jsonResponse = result.getAsJsonObject().getAsJsonObject("response");
     if (jsonResponse == null) {
       return null;
@@ -470,7 +426,7 @@ public class FrameImpl extends ChannelOwner implements Frame {
 
   @Override
   public void hover(String selector, HoverOptions options) {
-    withLogging("Frame.hover", () -> hoverImpl(selector, options));
+    hoverImpl(selector, options);
   }
 
   void hoverImpl(String selector, HoverOptions options) {
@@ -479,12 +435,12 @@ public class FrameImpl extends ChannelOwner implements Frame {
     }
     JsonObject params = gson().toJsonTree(options).getAsJsonObject();
     params.addProperty("selector", selector);
-    sendMessage("hover", params);
+    sendMessage("hover", params, timeout(options.timeout));
   }
 
   @Override
   public void dragAndDrop(String source, String target, DragAndDropOptions options) {
-    withLogging("Frame.dragAndDrop", () -> dragAndDropImpl(source, target, options));
+    dragAndDropImpl(source, target, options);
   }
 
   void dragAndDropImpl(String source, String target, DragAndDropOptions options) {
@@ -494,12 +450,12 @@ public class FrameImpl extends ChannelOwner implements Frame {
     JsonObject params = gson().toJsonTree(options).getAsJsonObject();
     params.addProperty("source", source);
     params.addProperty("target", target);
-    sendMessage("dragAndDrop", params);
+    sendMessage("dragAndDrop", params, timeout(options.timeout));
   }
 
   @Override
   public String innerHTML(String selector, InnerHTMLOptions options) {
-    return withLogging("Frame.innerHTML", () -> innerHTMLImpl(selector, options));
+    return innerHTMLImpl(selector, options);
   }
 
   String innerHTMLImpl(String selector, InnerHTMLOptions options) {
@@ -508,13 +464,13 @@ public class FrameImpl extends ChannelOwner implements Frame {
     }
     JsonObject params = gson().toJsonTree(options).getAsJsonObject();
     params.addProperty("selector", selector);
-    JsonObject json = sendMessage("innerHTML", params).getAsJsonObject();
+    JsonObject json = sendMessage("innerHTML", params, timeout(options.timeout)).getAsJsonObject();
     return json.get("value").getAsString();
   }
 
   @Override
   public String innerText(String selector, InnerTextOptions options) {
-    return withLogging("Frame.innerText", () -> innerTextImpl(selector, options));
+    return innerTextImpl(selector, options);
   }
 
   String innerTextImpl(String selector, InnerTextOptions options) {
@@ -523,13 +479,13 @@ public class FrameImpl extends ChannelOwner implements Frame {
     }
     JsonObject params = gson().toJsonTree(options).getAsJsonObject();
     params.addProperty("selector", selector);
-    JsonObject json = sendMessage("innerText", params).getAsJsonObject();
+    JsonObject json = sendMessage("innerText", params, timeout(options.timeout)).getAsJsonObject();
     return json.get("value").getAsString();
   }
 
   @Override
   public String inputValue(String selector, InputValueOptions options) {
-    return withLogging("Frame.inputValue", () -> inputValueImpl(selector, options));
+    return inputValueImpl(selector, options);
   }
 
   String inputValueImpl(String selector, InputValueOptions options) {
@@ -538,13 +494,13 @@ public class FrameImpl extends ChannelOwner implements Frame {
     }
     JsonObject params = gson().toJsonTree(options).getAsJsonObject();
     params.addProperty("selector", selector);
-    JsonObject json = sendMessage("inputValue", params).getAsJsonObject();
+    JsonObject json = sendMessage("inputValue", params, timeout(options.timeout)).getAsJsonObject();
     return json.get("value").getAsString();
   }
 
   @Override
   public boolean isChecked(String selector, IsCheckedOptions options) {
-    return withLogging("Page.isChecked", () -> isCheckedImpl(selector, options));
+    return isCheckedImpl(selector, options);
   }
 
   boolean isCheckedImpl(String selector, IsCheckedOptions options) {
@@ -553,7 +509,7 @@ public class FrameImpl extends ChannelOwner implements Frame {
     }
     JsonObject params = gson().toJsonTree(options).getAsJsonObject();
     params.addProperty("selector", selector);
-    JsonObject json = sendMessage("isChecked", params).getAsJsonObject();
+    JsonObject json = sendMessage("isChecked", params, timeout(options.timeout)).getAsJsonObject();
     return json.get("value").getAsBoolean();
   }
 
@@ -564,7 +520,7 @@ public class FrameImpl extends ChannelOwner implements Frame {
 
   @Override
   public boolean isDisabled(String selector, IsDisabledOptions options) {
-    return withLogging("Page.isDisabled", () -> isDisabledImpl(selector, options));
+    return isDisabledImpl(selector, options);
   }
 
   boolean isDisabledImpl(String selector, IsDisabledOptions options) {
@@ -573,13 +529,13 @@ public class FrameImpl extends ChannelOwner implements Frame {
     }
     JsonObject params = gson().toJsonTree(options).getAsJsonObject();
     params.addProperty("selector", selector);
-    JsonObject json = sendMessage("isDisabled", params).getAsJsonObject();
+    JsonObject json = sendMessage("isDisabled", params, timeout(options.timeout)).getAsJsonObject();
     return json.get("value").getAsBoolean();
   }
 
   @Override
   public boolean isEditable(String selector, IsEditableOptions options) {
-    return withLogging("Page.isEditable", () -> isEditableImpl(selector, options));
+    return isEditableImpl(selector, options);
   }
 
   boolean isEditableImpl(String selector, IsEditableOptions options) {
@@ -588,13 +544,13 @@ public class FrameImpl extends ChannelOwner implements Frame {
     }
     JsonObject params = gson().toJsonTree(options).getAsJsonObject();
     params.addProperty("selector", selector);
-    JsonObject json = sendMessage("isEditable", params).getAsJsonObject();
+    JsonObject json = sendMessage("isEditable", params, timeout(options.timeout)).getAsJsonObject();
     return json.get("value").getAsBoolean();
   }
 
   @Override
   public boolean isEnabled(String selector, IsEnabledOptions options) {
-    return withLogging("Page.isEnabled", () -> isEnabledImpl(selector, options));
+    return isEnabledImpl(selector, options);
   }
 
   boolean isEnabledImpl(String selector, IsEnabledOptions options) {
@@ -603,13 +559,13 @@ public class FrameImpl extends ChannelOwner implements Frame {
     }
     JsonObject params = gson().toJsonTree(options).getAsJsonObject();
     params.addProperty("selector", selector);
-    JsonObject json = sendMessage("isEnabled", params).getAsJsonObject();
+    JsonObject json = sendMessage("isEnabled", params, timeout(options.timeout)).getAsJsonObject();
     return json.get("value").getAsBoolean();
   }
 
   @Override
   public boolean isHidden(String selector, IsHiddenOptions options) {
-    return withLogging("Page.isHidden", () -> isHiddenImpl(selector, options));
+    return isHiddenImpl(selector, options);
   }
 
   boolean isHiddenImpl(String selector, IsHiddenOptions options) {
@@ -618,13 +574,13 @@ public class FrameImpl extends ChannelOwner implements Frame {
     }
     JsonObject params = gson().toJsonTree(options).getAsJsonObject();
     params.addProperty("selector", selector);
-    JsonObject json = sendMessage("isHidden", params).getAsJsonObject();
+    JsonObject json = sendMessage("isHidden", params, timeout(options.timeout)).getAsJsonObject();
     return json.get("value").getAsBoolean();
   }
 
   @Override
   public boolean isVisible(String selector, IsVisibleOptions options) {
-    return withLogging("Page.isVisible", () -> isVisibleImpl(selector, options));
+    return isVisibleImpl(selector, options);
   }
 
   @Override
@@ -638,7 +594,7 @@ public class FrameImpl extends ChannelOwner implements Frame {
     }
     JsonObject params = gson().toJsonTree(options).getAsJsonObject();
     params.addProperty("selector", selector);
-    JsonObject json = sendMessage("isVisible", params).getAsJsonObject();
+    JsonObject json = sendMessage("isVisible", params, timeout(options.timeout)).getAsJsonObject();
     return json.get("value").getAsBoolean();
   }
 
@@ -659,7 +615,7 @@ public class FrameImpl extends ChannelOwner implements Frame {
 
   @Override
   public void press(String selector, String key, PressOptions options) {
-    withLogging("Frame.press", () -> pressImpl(selector, key, options));
+    pressImpl(selector, key, options);
   }
 
   void pressImpl(String selector, String key, PressOptions options) {
@@ -669,12 +625,12 @@ public class FrameImpl extends ChannelOwner implements Frame {
     JsonObject params = gson().toJsonTree(options).getAsJsonObject();
     params.addProperty("selector", selector);
     params.addProperty("key", key);
-    sendMessage("press", params);
+    sendMessage("press", params, timeout(options.timeout));
   }
-
+  
   @Override
   public List<String> selectOption(String selector, SelectOption[] values, SelectOptionOptions options) {
-    return withLogging("Frame.selectOption", () -> selectOptionImpl(selector, values, options));
+    return selectOptionImpl(selector, values, options);
   }
 
   List<String> selectOptionImpl(String selector, SelectOption[] values, SelectOptionOptions options) {
@@ -686,7 +642,7 @@ public class FrameImpl extends ChannelOwner implements Frame {
     if (values != null) {
       params.add("options", gson().toJsonTree(values));
     }
-    return selectOption(params);
+    return selectOption(params, options.timeout);
   }
 
   List<String> selectOptionImpl(String selector, String[] values, SelectOptionOptions options) {
@@ -698,12 +654,12 @@ public class FrameImpl extends ChannelOwner implements Frame {
     if (values != null) {
       params.add("options", toSelectValueOrLabel(values));
     }
-    return selectOption(params);
+    return selectOption(params, options.timeout);
   }
 
   @Override
   public List<String> selectOption(String selector, ElementHandle[] values, SelectOptionOptions options) {
-    return withLogging("Frame.selectOption", () -> selectOptionImpl(selector, values, options));
+    return selectOptionImpl(selector, values, options);
   }
 
   List<String> selectOptionImpl(String selector, ElementHandle[] values, SelectOptionOptions options) {
@@ -715,30 +671,35 @@ public class FrameImpl extends ChannelOwner implements Frame {
     if (values != null) {
       params.add("elements", Serialization.toProtocol(values));
     }
-    return selectOption(params);
+    return selectOption(params, options.timeout);
   }
 
-  private List<String> selectOption(JsonObject params) {
-    JsonObject json = sendMessage("selectOption", params).getAsJsonObject();
+  private List<String> selectOption(JsonObject params, Double timeout) {
+    JsonObject json = sendMessage("selectOption", params, timeout(timeout)).getAsJsonObject();
     return parseStringList(json.getAsJsonArray("values"));
   }
 
   @Override
   public void setChecked(String selector, boolean checked, SetCheckedOptions options) {
-    withLogging("Frame.setChecked", () -> setCheckedImpl(selector, checked, options));
+    setCheckedImpl(selector, checked, options);
   }
 
   void setCheckedImpl(String selector, boolean checked, SetCheckedOptions options) {
     if (checked) {
-      checkImpl(selector, convertType(options, CheckOptions.class));
+      check(selector, convertType(options, CheckOptions.class));
     } else {
-      uncheckImpl(selector, convertType(options, UncheckOptions.class));
+      uncheck(selector, convertType(options, UncheckOptions.class));
     }
   }
 
   @Override
   public void setContent(String html, SetContentOptions options) {
-    withLogging("Frame.setContent", () -> setContentImpl(html, options));
+    if (options == null) {
+      options = new SetContentOptions();
+    }
+    JsonObject params = gson().toJsonTree(options).getAsJsonObject();
+    params.addProperty("html", html);
+    sendMessage("setContent", params, navigationTimeout(options.timeout));
   }
 
   @Override
@@ -746,18 +707,9 @@ public class FrameImpl extends ChannelOwner implements Frame {
     setInputFiles(selector, new Path[] {files}, options);
   }
 
-  void setContentImpl(String html, SetContentOptions options) {
-    if (options == null) {
-      options = new SetContentOptions();
-    }
-    JsonObject params = gson().toJsonTree(options).getAsJsonObject();
-    params.addProperty("html", html);
-    sendMessage("setContent", params);
-  }
-
   @Override
   public void setInputFiles(String selector, Path[] files, SetInputFilesOptions options) {
-    withLogging("Frame.setInputFiles", () -> setInputFilesImpl(selector, files, options));
+    setInputFilesImpl(selector, files, options);
   }
 
   void setInputFilesImpl(String selector, Path[] files, SetInputFilesOptions options) {
@@ -767,7 +719,7 @@ public class FrameImpl extends ChannelOwner implements Frame {
     JsonObject params = gson().toJsonTree(options).getAsJsonObject();
     addFilePathUploadParams(files, params, page.context());
     params.addProperty("selector", selector);
-    sendMessage("setInputFiles", params);
+    sendMessage("setInputFiles", params, timeout(options.timeout));
   }
 
   @Override
@@ -777,7 +729,7 @@ public class FrameImpl extends ChannelOwner implements Frame {
 
   @Override
   public void setInputFiles(String selector, FilePayload[] files, SetInputFilesOptions options) {
-    withLogging("Frame.setInputFiles", () -> setInputFilesImpl(selector, files, options));
+    setInputFilesImpl(selector, files, options);
   }
 
   void setInputFilesImpl(String selector, FilePayload[] files, SetInputFilesOptions options) {
@@ -788,73 +740,54 @@ public class FrameImpl extends ChannelOwner implements Frame {
     JsonObject params = gson().toJsonTree(options).getAsJsonObject();
     params.addProperty("selector", selector);
     params.add("payloads", toJsonArray(files));
-    sendMessage("setInputFiles", params);
+    sendMessage("setInputFiles", params, timeout(options.timeout));
   }
 
   @Override
   public void tap(String selector, TapOptions options) {
-    withLogging("Frame.tap", () -> tapImpl(selector, options));
-  }
-  void tapImpl(String selector, TapOptions options) {
     if (options == null) {
       options = new TapOptions();
     }
     JsonObject params = gson().toJsonTree(options).getAsJsonObject();
     params.addProperty("selector", selector);
-    sendMessage("tap", params);
+    sendMessage("tap", params, timeout(options.timeout));
   }
 
   @Override
   public String textContent(String selector, TextContentOptions options) {
-    return withLogging("Frame.textContent", () -> textContentImpl(selector, options));
-  }
-
-  String textContentImpl(String selector, TextContentOptions options) {
     if (options == null) {
       options = new TextContentOptions();
     }
     JsonObject params = gson().toJsonTree(options).getAsJsonObject();
     params.addProperty("selector", selector);
-    return sendMessage("textContent", params).getAsJsonObject().get("value").getAsString();
+    return sendMessage("textContent", params, timeout(options.timeout)).getAsJsonObject().get("value").getAsString();
   }
 
   @Override
   public String title() {
-    return withLogging("Frame.title", () -> titleImpl());
-  }
-
-  String titleImpl() {
     JsonElement json = sendMessage("title");
     return json.getAsJsonObject().get("value").getAsString();
   }
 
   @Override
   public void type(String selector, String text, TypeOptions options) {
-    withLogging("Frame.type", () -> typeImpl(selector, text, options));
-  }
-
-  void typeImpl(String selector, String text, TypeOptions options) {
     if (options == null) {
       options = new TypeOptions();
     }
     JsonObject params = gson().toJsonTree(options).getAsJsonObject();
     params.addProperty("selector", selector);
     params.addProperty("text", text);
-    sendMessage("type", params);
+    sendMessage("type", params, timeout(options.timeout));
   }
 
   @Override
   public void uncheck(String selector, UncheckOptions options) {
-    withLogging("Frame.uncheck", () -> uncheckImpl(selector, options));
-  }
-
-  void uncheckImpl(String selector, UncheckOptions options) {
     if (options == null) {
       options = new UncheckOptions();
     }
     JsonObject params = gson().toJsonTree(options).getAsJsonObject();
     params.addProperty("selector", selector);
-    sendMessage("uncheck", params);
+    sendMessage("uncheck", params, timeout(options.timeout));
   }
 
   @Override
@@ -864,17 +797,13 @@ public class FrameImpl extends ChannelOwner implements Frame {
 
   @Override
   public JSHandle waitForFunction(String pageFunction, Object arg, WaitForFunctionOptions options) {
-    return withLogging("Frame.waitForFunction", () -> waitForFunctionImpl(pageFunction, arg, options));
-  }
-
-  JSHandle waitForFunctionImpl(String pageFunction, Object arg, WaitForFunctionOptions options) {
     if (options == null) {
       options = new WaitForFunctionOptions();
     }
     JsonObject params = gson().toJsonTree(options).getAsJsonObject();
     params.addProperty("expression", pageFunction);
     params.add("arg", gson().toJsonTree(serializeArgument(arg)));
-    JsonElement json = sendMessage("waitForFunction", params);
+    JsonElement json = sendMessage("waitForFunction", params, timeout(options.timeout));
     JsonObject element = json.getAsJsonObject().getAsJsonObject("handle");
     return connection.getExistingObject(element.get("guid").getAsString());
   }
@@ -1031,7 +960,7 @@ public class FrameImpl extends ChannelOwner implements Frame {
 
     List<Waitable<Response>> waitables = new ArrayList<>();
     if (matcher == null) {
-      matcher = UrlMatcher.forOneOf(page.context().baseUrl, options.url);
+      matcher = UrlMatcher.forOneOf(page.context().baseUrl(), options.url, this.connection.localUtils, false);
     }
     logger.log("waiting for navigation " + matcher);
     waitables.add(new WaitForNavigationHelper(matcher, options.waitUntil, logger));
@@ -1043,10 +972,6 @@ public class FrameImpl extends ChannelOwner implements Frame {
 
   @Override
   public ElementHandle waitForSelector(String selector, WaitForSelectorOptions options) {
-    return withLogging("Frame.waitForSelector", () -> waitForSelectorImpl(selector, options));
-  }
-
-  ElementHandle waitForSelectorImpl(String selector, WaitForSelectorOptions options) {
     return waitForSelectorImpl(selector, options, false);
   }
 
@@ -1057,7 +982,7 @@ public class FrameImpl extends ChannelOwner implements Frame {
     JsonObject params = gson().toJsonTree(options).getAsJsonObject();
     params.addProperty("selector", selector);
     params.addProperty("omitReturnValue", omitReturnValue);
-    JsonElement json = sendMessage("waitForSelector", params);
+    JsonElement json = sendMessage("waitForSelector", params, timeout(options.timeout));
     JsonObject element = json.getAsJsonObject().getAsJsonObject("element");
     if (element == null) {
       return null;
@@ -1067,18 +992,13 @@ public class FrameImpl extends ChannelOwner implements Frame {
 
   @Override
   public void waitForTimeout(double timeout) {
-    withLogging("Frame.waitForTimeout", () -> waitForTimeoutImpl(timeout));
-  }
-
-  void waitForTimeoutImpl(double timeout) {
     JsonObject params = new JsonObject();
-    params.addProperty("timeout", timeout);
-    sendMessage("waitForTimeout", params);
+    sendMessage("waitForTimeout", params, timeout);
   }
 
   @Override
   public void waitForURL(String url, WaitForURLOptions options) {
-    waitForURL(new UrlMatcher(page.context().baseUrl, url), options);
+    waitForURL(UrlMatcher.forGlob(page.context().baseUrl(), url, this.connection.localUtils, false), options);
   }
 
   @Override
@@ -1113,14 +1033,14 @@ public class FrameImpl extends ChannelOwner implements Frame {
   int queryCount(String selector) {
     JsonObject params = new JsonObject();
     params.addProperty("selector", selector);
-    JsonObject result = sendMessage("queryCount", params).getAsJsonObject();
+    JsonObject result = sendMessage("queryCount", params, NO_TIMEOUT).getAsJsonObject();
     return result.get("value").getAsInt();
   }
 
   void highlightImpl(String selector) {
     JsonObject params = new JsonObject();
     params.addProperty("selector", selector);
-    sendMessage("highlight", params);
+    sendMessage("highlight", params, NO_TIMEOUT);
   }
 
   protected void handleEvent(String event, JsonObject params) {
@@ -1150,5 +1070,19 @@ public class FrameImpl extends ChannelOwner implements Frame {
       }
       internalListeners.notify(InternalEventType.NAVIGATED, params);
     }
+  }
+
+  protected double timeout(Double timeout) {
+    if (page != null) {
+      return page.timeoutSettings.timeout(timeout);
+    }
+    return new TimeoutSettings().timeout(timeout);
+  }
+
+  protected double navigationTimeout(Double timeout) {
+    if (page != null) {
+      return page.timeoutSettings.navigationTimeout(timeout);
+    }
+    return new TimeoutSettings().navigationTimeout(timeout);
   }
 }

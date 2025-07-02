@@ -21,34 +21,22 @@ if [[ "${RELEASE_CHANNEL}" == "stable" ]]; then
     echo "ERROR: cannot publish stable docker with Playwright version '${PW_VERSION}'"
     exit 1
   fi
-elif [[ "${RELEASE_CHANNEL}" == "canary" ]]; then
-  :
 else
   echo "ERROR: unknown release channel - ${RELEASE_CHANNEL}"
   echo "Must be either 'stable' or 'canary'"
   exit 1
 fi
 
-FOCAL_TAGS=(
-  "next-focal"
-)
-
-if [[ "$RELEASE_CHANNEL" == "stable" ]]; then
-  FOCAL_TAGS+=("focal")
-  FOCAL_TAGS+=("v${PW_VERSION}-focal")
-fi
-
+# Ubuntu 22.04
 JAMMY_TAGS=(
-  "next"
-  "next-jammy"
+  "v${PW_VERSION}-jammy"
 )
 
-if [[ "$RELEASE_CHANNEL" == "stable" ]]; then
-  JAMMY_TAGS+=("jammy")
-  JAMMY_TAGS+=("latest")
-  JAMMY_TAGS+=("v${PW_VERSION}")
-  JAMMY_TAGS+=("v${PW_VERSION}-jammy")
-fi
+# Ubuntu 24.04
+NOBLE_TAGS=(
+  "v${PW_VERSION}"
+  "v${PW_VERSION}-noble"
+)
 
 tag_and_push() {
   local source="$1"
@@ -82,12 +70,12 @@ install_oras_if_needed() {
 publish_docker_images_with_arch_suffix() {
   local FLAVOR="$1"
   local TAGS=()
-  if [[ "$FLAVOR" == "focal" ]]; then
-    TAGS=("${FOCAL_TAGS[@]}")
-  elif [[ "$FLAVOR" == "jammy" ]]; then
+  if [[ "$FLAVOR" == "jammy" ]]; then
     TAGS=("${JAMMY_TAGS[@]}")
+  elif [[ "$FLAVOR" == "noble" ]]; then
+    TAGS=("${NOBLE_TAGS[@]}")
   else
-    echo "ERROR: unknown flavor - $FLAVOR. Must be either 'focal' or 'jammy'"
+    echo "ERROR: unknown flavor - $FLAVOR. Must be either 'jammy', or 'noble'"
     exit 1
   fi
   local ARCH="$2"
@@ -108,12 +96,12 @@ publish_docker_images_with_arch_suffix() {
 publish_docker_manifest () {
   local FLAVOR="$1"
   local TAGS=()
-  if [[ "$FLAVOR" == "focal" ]]; then
-    TAGS=("${FOCAL_TAGS[@]}")
-  elif [[ "$FLAVOR" == "jammy" ]]; then
+  if [[ "$FLAVOR" == "jammy" ]]; then
     TAGS=("${JAMMY_TAGS[@]}")
+  elif [[ "$FLAVOR" == "noble" ]]; then
+    TAGS=("${NOBLE_TAGS[@]}")
   else
-    echo "ERROR: unknown flavor - $FLAVOR. Must be either 'focal' or 'jammy'"
+    echo "ERROR: unknown flavor - $FLAVOR. Must be either 'jammy', 'noble'"
     exit 1
   fi
 
@@ -132,10 +120,10 @@ publish_docker_manifest () {
   done
 }
 
-publish_docker_images_with_arch_suffix focal amd64
-publish_docker_images_with_arch_suffix focal arm64
-publish_docker_manifest focal amd64 arm64
-
 publish_docker_images_with_arch_suffix jammy amd64
 publish_docker_images_with_arch_suffix jammy arm64
 publish_docker_manifest jammy amd64 arm64
+
+publish_docker_images_with_arch_suffix noble amd64
+publish_docker_images_with_arch_suffix noble arm64
+publish_docker_manifest noble amd64 arm64

@@ -17,7 +17,6 @@
 package com.microsoft.playwright.impl;
 
 import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
 import com.microsoft.playwright.APIResponse;
@@ -29,6 +28,7 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 
+import static com.microsoft.playwright.impl.ChannelOwner.NO_TIMEOUT;
 import static com.microsoft.playwright.impl.Serialization.gson;
 import static com.microsoft.playwright.impl.Utils.isSafeCloseError;
 import static java.util.Arrays.asList;
@@ -46,31 +46,27 @@ class APIResponseImpl implements APIResponse {
 
   @Override
   public byte[] body() {
-    return context.withLogging("APIResponse.body", () -> {
-      try {
-        JsonObject params = new JsonObject();
-        params.addProperty("fetchUid", fetchUid());
-        JsonObject json = context.sendMessage("fetchResponseBody", params).getAsJsonObject();
-        if (!json.has("binary")) {
-          throw new PlaywrightException("Response has been disposed");
-        }
-        return Base64.getDecoder().decode(json.get("binary").getAsString());
-      } catch (PlaywrightException e) {
-        if (isSafeCloseError(e)) {
-          throw new PlaywrightException("Response has been disposed");
-        }
-        throw e;
+    try {
+      JsonObject params = new JsonObject();
+      params.addProperty("fetchUid", fetchUid());
+      JsonObject json = context.sendMessage("fetchResponseBody", params, NO_TIMEOUT).getAsJsonObject();
+      if (!json.has("binary")) {
+        throw new PlaywrightException("Response has been disposed");
       }
-    });
+      return Base64.getDecoder().decode(json.get("binary").getAsString());
+    } catch (PlaywrightException e) {
+      if (isSafeCloseError(e)) {
+        throw new PlaywrightException("Response has been disposed");
+      }
+      throw e;
+    }
   }
 
   @Override
   public void dispose() {
-    context.withLogging("APIResponse.dispose", () -> {
-      JsonObject params = new JsonObject();
-      params.addProperty("fetchUid", fetchUid());
-      context.sendMessage("disposeAPIResponse", params);
-    });
+    JsonObject params = new JsonObject();
+    params.addProperty("fetchUid", fetchUid());
+    context.sendMessage("disposeAPIResponse", params, NO_TIMEOUT);
   }
 
   @Override
@@ -116,7 +112,7 @@ class APIResponseImpl implements APIResponse {
   List<String> fetchLog() {
     JsonObject params = new JsonObject();
     params.addProperty("fetchUid", fetchUid());
-    JsonObject json = context.sendMessage("fetchLog", params).getAsJsonObject();
+    JsonObject json = context.sendMessage("fetchLog", params, NO_TIMEOUT).getAsJsonObject();
     JsonArray log = json.get("log").getAsJsonArray();
     return gson().fromJson(log, new TypeToken<List<String>>() {}.getType());
   }

@@ -21,10 +21,11 @@ import com.google.gson.JsonObject;
 
 import java.nio.file.Path;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import static com.microsoft.playwright.impl.Serialization.gson;
 
-class LocalUtils extends ChannelOwner {
+public class LocalUtils extends ChannelOwner {
   LocalUtils(ChannelOwner parent, String type, String guid, JsonObject initializer) {
     super(parent, type, guid, initializer);
   }
@@ -40,13 +41,13 @@ class LocalUtils extends ChannelOwner {
     params.addProperty("mode", appendMode ? "append" : "write");
     params.addProperty("stacksId", stacksId);
     params.addProperty("includeSources", includeSources);
-    sendMessage("zip", params);
+    sendMessage("zip", params, NO_TIMEOUT);
   }
 
   void traceDiscarded(String stacksId) {
     JsonObject params = new JsonObject();
     params.addProperty("stacksId", stacksId);
-    sendMessage("traceDiscarded", params);
+    sendMessage("traceDiscarded", params, NO_TIMEOUT);
   }
 
   String tracingStarted(String tracesDir, String traceName) {
@@ -55,7 +56,19 @@ class LocalUtils extends ChannelOwner {
       params.addProperty("tracesDir", "");
     }
     params.addProperty("traceName", traceName);
-    JsonObject json = connection.localUtils().sendMessage("tracingStarted", params).getAsJsonObject();
+    JsonObject json = connection.localUtils().sendMessage("tracingStarted", params, NO_TIMEOUT).getAsJsonObject();
     return json.get("stacksId").getAsString();
+  }
+
+  public Pattern globToRegex(String glob, String baseURL, boolean webSocketUrl) {
+    JsonObject params = new JsonObject();
+    params.addProperty("glob", glob);
+    if (baseURL != null) {
+      params.addProperty("baseURL", baseURL);
+    }
+    params.addProperty("webSocketUrl", webSocketUrl);
+    JsonObject json = connection.localUtils().sendMessage("globToRegex", params, NO_TIMEOUT).getAsJsonObject();
+    String regex = json.get("regex").getAsString();
+    return Pattern.compile(regex);
   }
 }

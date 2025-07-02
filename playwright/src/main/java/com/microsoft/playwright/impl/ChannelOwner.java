@@ -36,6 +36,8 @@ class ChannelOwner extends LoggingSupport {
   final JsonObject initializer;
   private boolean wasCollected;
 
+  static Double NO_TIMEOUT = null;
+
   protected ChannelOwner(ChannelOwner parent, String type, String guid, JsonObject initializer) {
     this(parent.connection, parent, type, guid, initializer);
   }
@@ -82,14 +84,25 @@ class ChannelOwner extends LoggingSupport {
     return new WaitForEventLogger<>(this, apiName, code).get();
   }
 
-  @Override
-  <T> T withLogging(String apiName, Supplier<T> code) {
-    String previousApiName = connection.setApiName(apiName);
+
+  void withTitle(String title, Runnable code) {
+    withTitle(title, () -> {
+      code.run();
+      return null;
+    });
+  }
+
+  <T> T withTitle(String title, Supplier<T> code) {
+    String previousTitle = connection.setTitle(title);
     try {
-      return super.withLogging(apiName, code);
+      return code.get();
     } finally {
-      connection.setApiName(previousApiName);
+      connection.setTitle(previousTitle);
     }
+  }
+
+  WaitableResult<JsonElement> sendMessageAsync(String method) {
+    return sendMessageAsync(method, new JsonObject());
   }
 
   WaitableResult<JsonElement> sendMessageAsync(String method, JsonObject params) {
@@ -98,11 +111,16 @@ class ChannelOwner extends LoggingSupport {
   }
 
   JsonElement sendMessage(String method) {
-    return sendMessage(method, new JsonObject());
+    return sendMessage(method, new JsonObject(), NO_TIMEOUT);
   }
 
-  JsonElement sendMessage(String method, JsonObject params) {
+  JsonElement sendMessage(String method, JsonObject params, Double timeout) {
     checkNotCollected();
+    if (timeout != null) {
+      params.addProperty("timeout", timeout);
+    } else if (params.has("timeout")) {
+      throw new PlaywrightException("Internal error: timeout must be passed explicitly.");
+    }
     return connection.sendMessage(guid, method, params);
   }
 

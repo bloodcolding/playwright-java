@@ -16,11 +16,18 @@
 
 package com.microsoft.playwright;
 
+import com.microsoft.playwright.options.*;
 import java.nio.file.Path;
 
 /**
  * API for collecting and saving Playwright traces. Playwright traces can be opened in <a
  * href="https://playwright.dev/java/docs/trace-viewer">Trace Viewer</a> after Playwright script runs.
+ *
+ * <p> <strong>NOTE:</strong> You probably want to <a href="https://playwright.dev/docs/api/class-testoptions#test-options-trace">enable tracing in
+ * your config file</a> instead of using {@code context.tracing}.The {@code context.tracing} API captures browser operations and network activity, but it doesn't record test assertions
+ * (like {@code expect} calls). We recommend <a
+ * href="https://playwright.dev/docs/api/class-testoptions#test-options-trace">enabling tracing through Playwright Test
+ * configuration</a>, which includes those assertions and provides a more complete trace for debugging test failures.
  *
  * <p> Start recording a trace before performing actions. At the end, stop tracing and save it to a file.
  * <pre>{@code
@@ -39,8 +46,8 @@ public interface Tracing {
   class StartOptions {
     /**
      * If specified, intermediate trace files are going to be saved into the files with the given name prefix inside the {@code
-     * tracesDir} folder specified in {@link com.microsoft.playwright.BrowserType#launch BrowserType.launch()}. To specify the
-     * final trace zip file name, you need to pass {@code path} option to {@link com.microsoft.playwright.Tracing#stop
+     * tracesDir} directory specified in {@link com.microsoft.playwright.BrowserType#launch BrowserType.launch()}. To specify
+     * the final trace zip file name, you need to pass {@code path} option to {@link com.microsoft.playwright.Tracing#stop
      * Tracing.stop()} instead.
      */
     public String name;
@@ -69,8 +76,8 @@ public interface Tracing {
 
     /**
      * If specified, intermediate trace files are going to be saved into the files with the given name prefix inside the {@code
-     * tracesDir} folder specified in {@link com.microsoft.playwright.BrowserType#launch BrowserType.launch()}. To specify the
-     * final trace zip file name, you need to pass {@code path} option to {@link com.microsoft.playwright.Tracing#stop
+     * tracesDir} directory specified in {@link com.microsoft.playwright.BrowserType#launch BrowserType.launch()}. To specify
+     * the final trace zip file name, you need to pass {@code path} option to {@link com.microsoft.playwright.Tracing#stop
      * Tracing.stop()} instead.
      */
     public StartOptions setName(String name) {
@@ -115,8 +122,8 @@ public interface Tracing {
   class StartChunkOptions {
     /**
      * If specified, intermediate trace files are going to be saved into the files with the given name prefix inside the {@code
-     * tracesDir} folder specified in {@link com.microsoft.playwright.BrowserType#launch BrowserType.launch()}. To specify the
-     * final trace zip file name, you need to pass {@code path} option to {@link com.microsoft.playwright.Tracing#stopChunk
+     * tracesDir} directory specified in {@link com.microsoft.playwright.BrowserType#launch BrowserType.launch()}. To specify
+     * the final trace zip file name, you need to pass {@code path} option to {@link com.microsoft.playwright.Tracing#stopChunk
      * Tracing.stopChunk()} instead.
      */
     public String name;
@@ -127,8 +134,8 @@ public interface Tracing {
 
     /**
      * If specified, intermediate trace files are going to be saved into the files with the given name prefix inside the {@code
-     * tracesDir} folder specified in {@link com.microsoft.playwright.BrowserType#launch BrowserType.launch()}. To specify the
-     * final trace zip file name, you need to pass {@code path} option to {@link com.microsoft.playwright.Tracing#stopChunk
+     * tracesDir} directory specified in {@link com.microsoft.playwright.BrowserType#launch BrowserType.launch()}. To specify
+     * the final trace zip file name, you need to pass {@code path} option to {@link com.microsoft.playwright.Tracing#stopChunk
      * Tracing.stopChunk()} instead.
      */
     public StartChunkOptions setName(String name) {
@@ -140,6 +147,29 @@ public interface Tracing {
      */
     public StartChunkOptions setTitle(String title) {
       this.title = title;
+      return this;
+    }
+  }
+  class GroupOptions {
+    /**
+     * Specifies a custom location for the group to be shown in the trace viewer. Defaults to the location of the {@link
+     * com.microsoft.playwright.Tracing#group Tracing.group()} call.
+     */
+    public Location location;
+
+    /**
+     * Specifies a custom location for the group to be shown in the trace viewer. Defaults to the location of the {@link
+     * com.microsoft.playwright.Tracing#group Tracing.group()} call.
+     */
+    public GroupOptions setLocation(String file) {
+      return setLocation(new Location(file));
+    }
+    /**
+     * Specifies a custom location for the group to be shown in the trace viewer. Defaults to the location of the {@link
+     * com.microsoft.playwright.Tracing#group Tracing.group()} call.
+     */
+    public GroupOptions setLocation(Location location) {
+      this.location = location;
       return this;
     }
   }
@@ -176,6 +206,12 @@ public interface Tracing {
   /**
    * Start tracing.
    *
+   * <p> <strong>NOTE:</strong> You probably want to <a href="https://playwright.dev/docs/api/class-testoptions#test-options-trace">enable tracing in
+   * your config file</a> instead of using {@code Tracing.start}.The {@code context.tracing} API captures browser operations and network activity, but it doesn't record test assertions
+   * (like {@code expect} calls). We recommend <a
+   * href="https://playwright.dev/docs/api/class-testoptions#test-options-trace">enabling tracing through Playwright Test
+   * configuration</a>, which includes those assertions and provides a more complete trace for debugging test failures.
+   *
    * <p> <strong>Usage</strong>
    * <pre>{@code
    * context.tracing().start(new Tracing.StartOptions()
@@ -194,6 +230,12 @@ public interface Tracing {
   }
   /**
    * Start tracing.
+   *
+   * <p> <strong>NOTE:</strong> You probably want to <a href="https://playwright.dev/docs/api/class-testoptions#test-options-trace">enable tracing in
+   * your config file</a> instead of using {@code Tracing.start}.The {@code context.tracing} API captures browser operations and network activity, but it doesn't record test assertions
+   * (like {@code expect} calls). We recommend <a
+   * href="https://playwright.dev/docs/api/class-testoptions#test-options-trace">enabling tracing through Playwright Test
+   * configuration</a>, which includes those assertions and provides a more complete trace for debugging test failures.
    *
    * <p> <strong>Usage</strong>
    * <pre>{@code
@@ -271,6 +313,56 @@ public interface Tracing {
    * @since v1.15
    */
   void startChunk(StartChunkOptions options);
+  /**
+   * <strong>NOTE:</strong> Use {@code test.step} instead when available.
+   *
+   * <p> Creates a new group within the trace, assigning any subsequent API calls to this group, until {@link
+   * com.microsoft.playwright.Tracing#groupEnd Tracing.groupEnd()} is called. Groups can be nested and will be visible in the
+   * trace viewer.
+   *
+   * <p> <strong>Usage</strong>
+   * <pre>{@code
+   * // All actions between group and groupEnd
+   * // will be shown in the trace viewer as a group.
+   * page.context().tracing().group("Open Playwright.dev > API");
+   * page.navigate("https://playwright.dev/");
+   * page.getByRole(AriaRole.LINK, new Page.GetByRoleOptions().setName("API")).click();
+   * page.context().tracing().groupEnd();
+   * }</pre>
+   *
+   * @param name Group name shown in the trace viewer.
+   * @since v1.49
+   */
+  default void group(String name) {
+    group(name, null);
+  }
+  /**
+   * <strong>NOTE:</strong> Use {@code test.step} instead when available.
+   *
+   * <p> Creates a new group within the trace, assigning any subsequent API calls to this group, until {@link
+   * com.microsoft.playwright.Tracing#groupEnd Tracing.groupEnd()} is called. Groups can be nested and will be visible in the
+   * trace viewer.
+   *
+   * <p> <strong>Usage</strong>
+   * <pre>{@code
+   * // All actions between group and groupEnd
+   * // will be shown in the trace viewer as a group.
+   * page.context().tracing().group("Open Playwright.dev > API");
+   * page.navigate("https://playwright.dev/");
+   * page.getByRole(AriaRole.LINK, new Page.GetByRoleOptions().setName("API")).click();
+   * page.context().tracing().groupEnd();
+   * }</pre>
+   *
+   * @param name Group name shown in the trace viewer.
+   * @since v1.49
+   */
+  void group(String name, GroupOptions options);
+  /**
+   * Closes the last group created by {@link com.microsoft.playwright.Tracing#group Tracing.group()}.
+   *
+   * @since v1.49
+   */
+  void groupEnd();
   /**
    * Stop tracing.
    *

@@ -16,7 +16,7 @@
 
 package com.microsoft.playwright;
 
-import com.microsoft.playwright.options.Cookie;
+import com.microsoft.playwright.options.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIf;
 
@@ -98,7 +98,19 @@ public class TestPageRoute extends TestBase {
   }
 
   @Test
-  void shouldSupportQuestionMarkInGlobPattern() {
+  void shouldUnrouteNonExistentPatternHandler() {
+    List<Integer> intercepted = new ArrayList<>();
+    page.route(Pattern.compile("empty.html"), route -> {
+      intercepted.add(1);
+      route.fallback();
+    });
+    page.unroute("**/*");
+    page.navigate(server.EMPTY_PAGE);
+    assertEquals(asList( 1), intercepted);
+  }
+
+  @Test
+  void shouldNotSupportQuestionMarkInGlobPattern() {
     server.setRoute("/index", exchange -> {
       exchange.sendResponseHeaders(200, 0);
       try (OutputStreamWriter writer = new OutputStreamWriter(exchange.getResponseBody())) {
@@ -109,6 +121,18 @@ public class TestPageRoute extends TestBase {
       exchange.sendResponseHeaders(200, 0);
       try (OutputStreamWriter writer = new OutputStreamWriter(exchange.getResponseBody())) {
         writer.write("index123hello");
+      }
+    });
+    server.setRoute("/index?hello", exchange -> {
+      exchange.sendResponseHeaders(200, 0);
+      try (OutputStreamWriter writer = new OutputStreamWriter(exchange.getResponseBody())) {
+        writer.write("index?hello");
+      }
+    });
+    server.setRoute("/index1hello", exchange -> {
+      exchange.sendResponseHeaders(200, 0);
+      try (OutputStreamWriter writer = new OutputStreamWriter(exchange.getResponseBody())) {
+        writer.write("index1hello");
       }
     });
 
@@ -127,7 +151,8 @@ public class TestPageRoute extends TestBase {
     assertTrue(page.content().contains("index-no-hello"), page.content());
 
     page.navigate(server.PREFIX + "/index1hello");
-    assertTrue(page.content().contains("intercepted any character"), page.content());
+    assertFalse(page.content().contains("intercepted any character"), page.content());
+    assertTrue(page.content().contains("index1hello"), page.content());
 
     page.navigate(server.PREFIX + "/index123hello");
     assertTrue(page.content().contains("index123hello"), page.content());

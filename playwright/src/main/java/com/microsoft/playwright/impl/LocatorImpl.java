@@ -21,29 +21,25 @@ import com.google.gson.JsonObject;
 import com.microsoft.playwright.*;
 import com.microsoft.playwright.options.*;
 
-import java.lang.reflect.Field;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.regex.Pattern;
 
 import static com.microsoft.playwright.impl.LocatorUtils.*;
 import static com.microsoft.playwright.impl.Serialization.gson;
 import static com.microsoft.playwright.impl.Utils.convertType;
-import static com.microsoft.playwright.impl.Utils.toJsRegexFlags;
 
 class LocatorImpl implements Locator {
   final FrameImpl frame;
   final String selector;
 
-  LocatorImpl(FrameImpl frame, String frameSelector) {
-    this(frame, frameSelector, null);
+  LocatorImpl(FrameImpl frame, String selector, LocatorOptions options) {
+    this(frame, selector, options, null);
   }
 
-  public LocatorImpl(FrameImpl frame, String selector, LocatorOptions options) {
+  private LocatorImpl(FrameImpl frame, String selector, LocatorOptions options, Boolean visible) {
     this.frame = frame;
     if (options != null) {
       if (options.hasText != null) {
@@ -65,30 +61,31 @@ class LocatorImpl implements Locator {
         selector += " >> internal:has-not=" + gson().toJson(locator.selector);
       }
     }
+    if (visible != null) {
+      selector += " >> visible=" + visible;
+    }
     this.selector = selector;
   }
 
-  private static String escapeWithQuotes(String text) {
-    return gson().toJson(text);
-  }
-
-  private <R, O> R withElement(BiFunction<ElementHandle, O, R> callback, O options) {
-    ElementHandleOptions handleOptions = convertType(options, ElementHandleOptions.class);
-    // TODO: support deadline based timeout
-//    Double timeout = null;
-//    if (handleOptions != null) {
-//      timeout = handleOptions.timeout;
-//    }
-//    timeout = frame.page.timeoutSettings.timeout(timeout);
-//    long deadline = System.nanoTime() + (long) timeout.doubleValue() * 1_000_000;
-    ElementHandle handle = elementHandle(handleOptions);
-    try {
-      return callback.apply(handle, options);
-    } finally {
-      if (handle != null) {
-        handle.dispose();
+  private <R, O> R withElement(BiFunction<ElementHandle, O, R> callback, O options, String title) {
+    return frame.withTitle(title, () -> {
+      ElementHandleOptions handleOptions = convertType(options, ElementHandleOptions.class);
+      // TODO: support deadline based timeout
+      //    Double timeout = null;
+      //    if (handleOptions != null) {
+      //      timeout = handleOptions.timeout;
+      //    }
+      //    timeout = frame.page.timeoutSettings.timeout(timeout);
+      //    long deadline = System.nanoTime() + (long) timeout.doubleValue() * 1_000_000;
+      ElementHandle handle = elementHandle(handleOptions);
+      try {
+        return callback.apply(handle, options);
+      } finally {
+        if (handle != null) {
+          handle.dispose();
+        }
       }
-    }
+    });
   }
 
   @Override
@@ -120,23 +117,30 @@ class LocatorImpl implements Locator {
   }
 
   @Override
-  public void blur(BlurOptions options) {
-    frame.withLogging("Locator.blur", () -> blurImpl(options));
+  public String ariaSnapshot(AriaSnapshotOptions options) {
+    if (options == null) {
+      options = new AriaSnapshotOptions();
+    }
+    JsonObject params = gson().toJsonTree(options).getAsJsonObject();
+    params.addProperty("selector", selector);
+    JsonObject result = frame.sendMessage("ariaSnapshot", params, frame.timeout(options.timeout)).getAsJsonObject();
+    return result.get("snapshot").getAsString();
   }
 
-  private void blurImpl(BlurOptions options) {
+  @Override
+  public void blur(BlurOptions options) {
     if (options == null) {
       options = new BlurOptions();
     }
     JsonObject params = gson().toJsonTree(options).getAsJsonObject();
     params.addProperty("selector", selector);
     params.addProperty("strict", true);
-    frame.sendMessage("blur", params);
+    frame.sendMessage("blur", params, frame.timeout(options.timeout));
   }
 
   @Override
   public BoundingBox boundingBox(BoundingBoxOptions options) {
-    return withElement((h, o) -> h.boundingBox(), options);
+    return withElement((h, o) -> h.boundingBox(), options, "Bounding Box");
   }
 
   @Override
@@ -149,7 +153,7 @@ class LocatorImpl implements Locator {
 
   @Override
   public void clear(ClearOptions options) {
-    fill("", convertType(options, FillOptions.class));
+    frame.withTitle("Clear", () -> fill("", convertType(options, FillOptions.class)));
   }
 
   @Override
@@ -163,6 +167,11 @@ class LocatorImpl implements Locator {
   @Override
   public int count() {
     return frame.queryCount(selector);
+  }
+
+  @Override
+  public Locator describe(String description) {
+    return locator(describeSelector(description));
   }
 
   @Override
@@ -214,7 +223,7 @@ class LocatorImpl implements Locator {
 
   @Override
   public Object evaluate(String expression, Object arg, EvaluateOptions options) {
-    return withElement((h, o) -> h.evaluate(expression, arg), options);
+    return withElement((h, o) -> h.evaluate(expression, arg), options, "Evaluate");
   }
 
   @Override
@@ -224,7 +233,7 @@ class LocatorImpl implements Locator {
 
   @Override
   public JSHandle evaluateHandle(String expression, Object arg, EvaluateHandleOptions options) {
-    return withElement((h, o) -> h.evaluateHandle(expression, arg), options);
+    return withElement((h, o) -> h.evaluateHandle(expression, arg), options, "Evaluate");
   }
 
   @Override
@@ -237,7 +246,8 @@ class LocatorImpl implements Locator {
 
   @Override
   public Locator filter(FilterOptions options) {
-    return new LocatorImpl(frame, selector, convertType(options,LocatorOptions.class));
+    Boolean visible = (options == null) ? null : options.visible;
+    return new LocatorImpl(frame, selector, convertType(options, LocatorOptions.class), visible);
   }
 
   @Override
@@ -468,7 +478,7 @@ class LocatorImpl implements Locator {
 
   @Override
   public byte[] screenshot(ScreenshotOptions options) {
-    return withElement((h, o) -> h.screenshot(o), convertType(options, ElementHandle.ScreenshotOptions.class));
+    return withElement((h, o) -> h.screenshot(o), convertType(options, ElementHandle.ScreenshotOptions.class), "Screenshot");
   }
 
   @Override
@@ -476,7 +486,7 @@ class LocatorImpl implements Locator {
     withElement((h, o) -> {
       h.scrollIntoViewIfNeeded(o);
       return null;
-    }, convertType(options, ElementHandle.ScrollIntoViewIfNeededOptions.class));
+    }, convertType(options, ElementHandle.ScrollIntoViewIfNeededOptions.class), "Scroll into view");
   }
 
   @Override
@@ -532,7 +542,7 @@ class LocatorImpl implements Locator {
     withElement((h, o) -> {
       h.selectText(o);
       return null;
-    }, convertType(options, ElementHandle.SelectTextOptions.class));
+    }, convertType(options, ElementHandle.SelectTextOptions.class), "Select text");
   }
 
   @Override
@@ -612,11 +622,7 @@ class LocatorImpl implements Locator {
     if (options == null) {
       options = new WaitForOptions();
     }
-    waitForImpl(options);
-  }
-
-  private void waitForImpl(WaitForOptions options) {
-    frame.withLogging("Locator.waitFor", () -> frame.waitForSelectorImpl(selector, convertType(options, Frame.WaitForSelectorOptions.class).setStrict(true), true));
+    frame.waitForSelectorImpl(selector, convertType(options, Frame.WaitForSelectorOptions.class).setStrict(true), true);
   }
 
   @Override
@@ -638,8 +644,8 @@ class LocatorImpl implements Locator {
     return frame.hashCode() ^ selector.hashCode();
   }
 
-  FrameExpectResult expect(String expression, FrameExpectOptions options) {
-    return frame.withLogging("Locator.expect", () -> expectImpl(expression, options));
+  FrameExpectResult expect(String expression, FrameExpectOptions options, String title) {
+    return frame.withTitle(title, () -> expectImpl(expression, options));
   }
 
   JsonObject toProtocol() {
@@ -650,13 +656,10 @@ class LocatorImpl implements Locator {
   }
 
   private FrameExpectResult expectImpl(String expression, FrameExpectOptions options) {
-    if (options == null) {
-      options = new FrameExpectOptions();
-    }
     JsonObject params = gson().toJsonTree(options).getAsJsonObject();
     params.addProperty("selector", selector);
     params.addProperty("expression", expression);
-    JsonElement json = frame.sendMessage("expect", params);
+    JsonElement json = frame.sendMessage("expect", params, options.timeout);
     FrameExpectResult result = gson().fromJson(json, FrameExpectResult.class);
     return result;
   }

@@ -17,6 +17,7 @@
 package com.microsoft.playwright;
 
 import com.google.gson.Gson;
+import com.microsoft.playwright.APIRequest.NewContextOptions;
 import com.microsoft.playwright.options.HttpCredentials;
 import com.microsoft.playwright.options.HttpCredentialsSend;
 import com.microsoft.playwright.options.HttpHeader;
@@ -37,6 +38,8 @@ import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class TestGlobalFetch extends TestBase {
+  private static final List<String> HTTP_METHODS = asList("GET", "PUT", "POST", "OPTIONS", "HEAD", "PATCH");
+
   @Test
   void shouldHaveJavaInDefaultUesrAgent() throws ExecutionException, InterruptedException {
     APIRequestContext request = playwright.request().newContext(new APIRequest.NewContextOptions());
@@ -337,7 +340,7 @@ public class TestGlobalFetch extends TestBase {
     for (String method : new String[] {"head", "put", "trace"}) {
       server.setRoute("/empty.html", exchange -> {
         exchange.getResponseHeaders().set("Content-type", "text/plain");
-        exchange.sendResponseHeaders(404, 10);
+        exchange.sendResponseHeaders(404, exchange.getRequestMethod().equals("HEAD") ? -1 : 10);
         try (Writer writer = new OutputStreamWriter(exchange.getResponseBody())) {
           writer.write("Not found.");
         }
@@ -358,7 +361,7 @@ public class TestGlobalFetch extends TestBase {
     server.setRedirect("/b/c/redirect4", "/simple.json");
 
     APIRequestContext request = playwright.request().newContext();
-    for (String method : new String[] {"GET", "PUT", "POST", "OPTIONS", "HEAD", "PATCH"}) {
+    for (String method : HTTP_METHODS) {
       for (int maxRedirects = 1; maxRedirects < 4; maxRedirects++) {
         int currMaxRedirects = maxRedirects;
         PlaywrightException exception = assertThrows(PlaywrightException.class,
@@ -371,12 +374,68 @@ public class TestGlobalFetch extends TestBase {
   }
 
   @Test
+  void shouldUseMaxRedirectsFromFetchWhenProvidedOverridingNewContext() {
+    server.setRedirect("/a/redirect1", "/b/c/redirect2");
+    server.setRedirect("/b/c/redirect2", "/b/c/redirect3");
+    server.setRedirect("/b/c/redirect3", "/b/c/redirect4");
+    server.setRedirect("/b/c/redirect4", "/simple.json");
+
+    APIRequestContext request = playwright.request().newContext(new NewContextOptions().setMaxRedirects(1));
+    for (String method : HTTP_METHODS) {
+      APIResponse response = request.fetch(server.PREFIX + "/a/redirect1",
+        RequestOptions.create().setMethod(method).setMaxRedirects(4));
+      assertEquals(200, response.status());
+    }
+    request.dispose();
+  }
+
+  @Test
+  void shouldFollowRedirectsUpToMaxRedirectsLimitSetInNewContext() {
+    server.setRedirect("/a/redirect1", "/b/c/redirect2");
+    server.setRedirect("/b/c/redirect2", "/b/c/redirect3");
+    server.setRedirect("/b/c/redirect3", "/b/c/redirect4");
+    server.setRedirect("/b/c/redirect4", "/simple.json");
+
+    for (String method : HTTP_METHODS) {
+      for (int maxRedirects = 1; maxRedirects <= 4; maxRedirects++) {
+        int currMaxRedirects = maxRedirects;
+        APIRequestContext request = playwright.request().newContext(new NewContextOptions().setMaxRedirects(currMaxRedirects));
+        if (maxRedirects < 4) {
+          PlaywrightException exception = assertThrows(PlaywrightException.class,
+            () -> request.fetch(server.PREFIX + "/a/redirect1",
+            RequestOptions.create().setMethod(method)));
+          assertTrue(exception.getMessage().contains("Max redirect count exceeded"), exception.getMessage());
+        } else {
+          APIResponse response = request.fetch(server.PREFIX + "/a/redirect1", RequestOptions.create().setMethod(method));
+          assertEquals(200, response.status());
+        }
+        request.dispose();
+      }
+    }
+  }
+
+  @Test
+  void shouldNotFollowRedirectsWhenMaxRedirectsIsSetTo0InNewContext() {
+    server.setRedirect("/a/redirect1", "/b/c/redirect2");
+    server.setRedirect("/b/c/redirect2", "/simple.json");
+
+    APIRequestContext request = playwright.request().newContext(new NewContextOptions().setMaxRedirects(0));
+    for (String method : HTTP_METHODS) {
+      APIResponse response = request.fetch(server.PREFIX + "/a/redirect1",
+        RequestOptions.create().setMethod(method));
+      assertEquals("/b/c/redirect2", response.headers().get("location"));
+      assertEquals(302, response.status());
+    }
+    request.dispose();
+  }
+
+  @Test
   void shouldNotFollowRedirectsWhenMaxRedirectsIsSetTo0() {
     server.setRedirect("/a/redirect1", "/b/c/redirect2");
     server.setRedirect("/b/c/redirect2", "/simple.json");
 
     APIRequestContext request = playwright.request().newContext();
-    for (String method : new String[] {"GET", "PUT", "POST", "OPTIONS", "HEAD", "PATCH"}) {
+    for (String method : HTTP_METHODS) {
       APIResponse response = request.fetch(server.PREFIX + "/a/redirect1",
         RequestOptions.create().setMethod(method).setMaxRedirects(0));
       assertEquals("/b/c/redirect2", response.headers().get("location"));
@@ -391,7 +450,7 @@ public class TestGlobalFetch extends TestBase {
     server.setRedirect("/b/c/redirect2", "/simple.json");
 
     APIRequestContext request = playwright.request().newContext();
-    for (String method : new String[] {"GET", "PUT", "POST", "OPTIONS", "HEAD", "PATCH"}) {
+    for (String method : HTTP_METHODS) {
       PlaywrightException exception = assertThrows(PlaywrightException.class,
         () -> request.fetch(server.PREFIX + "/a/redirect1",
           RequestOptions.create().setMethod(method).setMaxRedirects(-1)));
@@ -522,5 +581,62 @@ public class TestGlobalFetch extends TestBase {
     request.dispose(new APIRequestContext.DisposeOptions().setReason("My reason"));
     PlaywrightException e = assertThrows(PlaywrightException.class, () -> request.get(server.EMPTY_PAGE));
     assertTrue(e.getMessage().contains("My reason"), e.getMessage());
+  }
+
+  @Test
+  public void shouldRetryECONNRESET() {
+    int[] requestCount = {0};
+    server.setRoute("/test", exchange -> {
+      if (requestCount[0]++ < 3) {
+        exchange.close();
+        return;
+      }
+      exchange.getResponseHeaders().add("Content-Type", "text/plain");
+      exchange.sendResponseHeaders(200, 0);
+      try (OutputStreamWriter writer = new OutputStreamWriter(exchange.getResponseBody())) {
+        writer.write("Hello!");
+      }
+    });
+
+    APIRequestContext requestContext = playwright.request().newContext();
+    APIResponse response = requestContext.get(server.PREFIX + "/test",
+      RequestOptions.create().setMaxRetries(3));
+
+    assertEquals(200, response.status());
+    assertEquals("Hello!", response.text());
+    assertEquals(4, requestCount[0]);
+    requestContext.dispose();
+  }
+
+  @Test
+  public void shouldThrowWhenFailOnStatusCodeIsSetToTrue() {
+    APIRequestContext request = playwright.request().newContext(new APIRequest.NewContextOptions().setFailOnStatusCode(true));
+    server.setRoute("/empty.html", exchange -> {
+      exchange.getResponseHeaders().set("Content-Length", "10");
+      exchange.getResponseHeaders().set("Content-type", "text/plain");
+      exchange.sendResponseHeaders(404, 10);
+      try (Writer writer = new OutputStreamWriter(exchange.getResponseBody())) {
+        writer.write("Not found.");
+      }
+    });
+    PlaywrightException error = assertThrows(PlaywrightException.class, () -> {
+      request.get(server.EMPTY_PAGE);
+    });
+    assertTrue(error.getMessage().contains("404 Not Found"));
+  }
+
+  @Test
+  public void shouldNotThrowWhenFailOnStatusCodeIsSetToFalse() {
+    APIRequestContext request = playwright.request().newContext(new APIRequest.NewContextOptions().setFailOnStatusCode(false));
+    server.setRoute("/empty.html", exchange -> {
+      exchange.getResponseHeaders().set("Content-Length", "10");
+      exchange.getResponseHeaders().set("Content-type", "text/plain");
+      exchange.sendResponseHeaders(404, 10);
+      try (Writer writer = new OutputStreamWriter(exchange.getResponseBody())) {
+        writer.write("Not found.");
+      }
+    });
+    APIResponse response = request.get(server.EMPTY_PAGE);
+    assertEquals(404, response.status());
   }
 }

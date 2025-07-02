@@ -30,7 +30,6 @@ import static org.junit.jupiter.api.Assertions.*;
 public class TestPdf extends TestBase {
   @Test
   @EnabledIf(value="com.microsoft.playwright.TestBase#isChromium", disabledReason="skip")
-  @DisabledIf(value="com.microsoft.playwright.TestBase#isHeadful", disabledReason="skip")
   void shouldBeAbleToSaveFile(@TempDir Path tempDir) throws IOException {
     Path path = tempDir.resolve("output.pdf");
     page.pdf(new Page.PdfOptions().setPath(path));
@@ -40,7 +39,6 @@ public class TestPdf extends TestBase {
 
   @Test
   @EnabledIf(value="com.microsoft.playwright.TestBase#isChromium", disabledReason="skip")
-  @DisabledIf(value="com.microsoft.playwright.TestBase#isHeadful", disabledReason="skip")
   void shouldSupportFractionalScaleValue(@TempDir Path tempDir) throws IOException {
     Path path = tempDir.resolve("output.pdf");
     page.pdf(new Page.PdfOptions().setPath(path).setScale(0.5));
@@ -51,7 +49,6 @@ public class TestPdf extends TestBase {
 
   @Test
   @EnabledIf(value="com.microsoft.playwright.TestBase#isChromium", disabledReason="Printing to pdf is currently only supported in headless chromium.")
-  @DisabledIf(value="com.microsoft.playwright.TestBase#isHeadful", disabledReason="Printing to pdf is currently only supported in headless chromium.")
   void shouldBeAbleToGenerateOutline(@TempDir Path tempDir) throws IOException {
     page.navigate(server.PREFIX + "/headings.html");
     Path outputFileNoOutline = tempDir.resolve("outputNoOutline.pdf");
@@ -61,13 +58,6 @@ public class TestPdf extends TestBase {
     long noOutlineSize = Files.size(outputFileNoOutline);
     long outlineSize = Files.size(outputFileOutline);
     assertTrue(outlineSize > noOutlineSize, "Unexpected sizes: " + outlineSize + " noOutline: " + noOutlineSize);
-  }
-
-  @Test
-  @DisabledIf(value="com.microsoft.playwright.TestBase#isChromium", disabledReason="skip")
-  void shouldThrowInNonChromium() {
-    PlaywrightException e = assertThrows(PlaywrightException.class, () -> page.pdf());
-    assertTrue(e.getMessage().contains("PDF generation is only supported for Headless Chromium"), e.getMessage());
   }
 
 

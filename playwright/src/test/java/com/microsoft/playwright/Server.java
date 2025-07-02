@@ -20,7 +20,6 @@ import com.sun.net.httpserver.*;
 
 import java.io.*;
 import java.net.InetSocketAddress;
-import java.nio.file.FileSystems;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
@@ -73,11 +72,8 @@ public class Server implements HttpHandler {
     } else {
       server = HttpServer.create(new InetSocketAddress("localhost", port), 0);
     }
-
     server.createContext("/", this);
     server.setExecutor(null); // creates a default executor
-
-    File cwd = FileSystems.getDefault().getPath(".").toFile();
     server.start();
   }
 
@@ -222,7 +218,7 @@ public class Server implements HttpHandler {
     }
     long contentLength = body.size();
     // -1 means no body, 0 means chunked encoding.
-    exchange.sendResponseHeaders(200, contentLength == 0 ? -1 : contentLength);
+    exchange.sendResponseHeaders(200, (contentLength == 0 || exchange.getRequestMethod().equals("HEAD")) ? -1 : contentLength);
     if (contentLength > 0) {
       exchange.getResponseBody().write(body.toByteArray());
     }

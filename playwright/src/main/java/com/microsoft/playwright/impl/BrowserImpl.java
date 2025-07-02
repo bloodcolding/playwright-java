@@ -20,7 +20,6 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.microsoft.playwright.*;
-import com.microsoft.playwright.options.HarContentPolicy;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -29,10 +28,8 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.function.Consumer;
 
-import static com.microsoft.playwright.impl.Serialization.addHarUrlFilter;
 import static com.microsoft.playwright.impl.Serialization.gson;
 import static com.microsoft.playwright.impl.Utils.*;
-import static com.microsoft.playwright.impl.Utils.convertType;
 
 class BrowserImpl extends ChannelOwner implements Browser {
   final Set<BrowserContextImpl> contexts = new HashSet<>();
@@ -69,10 +66,6 @@ class BrowserImpl extends ChannelOwner implements Browser {
 
   @Override
   public void close(CloseOptions options) {
-    withLogging("Browser.close", () -> closeImpl(options));
-  }
-
-  private void closeImpl(CloseOptions options) {
     if (options == null) {
       options = new CloseOptions();
     }
@@ -117,16 +110,20 @@ class BrowserImpl extends ChannelOwner implements Browser {
 
   @Override
   public BrowserContextImpl newContext(NewContextOptions options) {
-    return withLogging("Browser.newContext", () -> newContextImpl(options));
-  }
-
-  private BrowserContextImpl newContextImpl(NewContextOptions options) {
     if (options == null) {
       options = new NewContextOptions();
     } else {
       // Make a copy so that we can nullify some fields below.
       options = convertType(options, NewContextOptions.class);
     }
+
+    NewContextOptions harOptions = Utils.clone(options);
+    options.recordHarContent = null;
+    options.recordHarMode = null;
+    options.recordHarPath = null;
+    options.recordHarOmitContent = null;
+    options.recordHarUrlFilter = null;
+
     if (options.storageStatePath != null) {
       try {
         byte[] bytes = Files.readAllBytes(options.storageStatePath);
@@ -141,50 +138,9 @@ class BrowserImpl extends ChannelOwner implements Browser {
       storageState = new Gson().fromJson(options.storageState, JsonObject.class);
       options.storageState = null;
     }
-    JsonObject recordHar = null;
-    Path recordHarPath = options.recordHarPath;
-    HarContentPolicy harContentPolicy = null;
-    if (options.recordHarPath != null) {
-      recordHar = new JsonObject();
-      recordHar.addProperty("path", options.recordHarPath.toString());
-      if (options.recordHarContent != null) {
-        harContentPolicy = options.recordHarContent;
-      } else if (options.recordHarOmitContent != null && options.recordHarOmitContent) {
-        harContentPolicy = HarContentPolicy.OMIT;
-      }
-      if (harContentPolicy != null) {
-        recordHar.addProperty("content", harContentPolicy.name().toLowerCase());
-      }
-      if (options.recordHarMode != null) {
-        recordHar.addProperty("mode", options.recordHarMode.name().toLowerCase());
-      }
-      addHarUrlFilter(recordHar, options.recordHarUrlFilter);
-      options.recordHarPath = null;
-      options.recordHarMode = null;
-      options.recordHarOmitContent = null;
-      options.recordHarContent = null;
-      options.recordHarUrlFilter = null;
-    } else {
-      if (options.recordHarOmitContent != null) {
-        throw new PlaywrightException("recordHarOmitContent is set but recordHarPath is null");
-      }
-      if (options.recordHarUrlFilter != null) {
-        throw new PlaywrightException("recordHarUrlFilter is set but recordHarPath is null");
-      }
-      if (options.recordHarMode != null) {
-        throw new PlaywrightException("recordHarMode is set but recordHarPath is null");
-      }
-      if (options.recordHarContent != null) {
-        throw new PlaywrightException("recordHarContent is set but recordHarPath is null");
-      }
-    }
-
     JsonObject params = gson().toJsonTree(options).getAsJsonObject();
     if (storageState != null) {
       params.add("storageState", storageState);
-    }
-    if (recordHar != null) {
-      params.add("recordHar", recordHar);
     }
     if (options.recordVideoDir != null) {
       JsonObject recordVideo = new JsonObject();
@@ -208,35 +164,26 @@ class BrowserImpl extends ChannelOwner implements Browser {
         params.addProperty("noDefaultViewport", true);
       }
     }
+    addToProtocol(params, options.clientCertificates);
     params.remove("acceptDownloads");
     if (options.acceptDownloads != null) {
       params.addProperty("acceptDownloads", options.acceptDownloads ? "accept" : "deny");
     }
-    JsonElement result = sendMessage("newContext", params);
+    params.add("selectorEngines", gson().toJsonTree(browserType.playwright.selectors.selectorEngines));
+    params.addProperty("testIdAttributeName", browserType.playwright.selectors.testIdAttributeName);
+    JsonElement result = sendMessage("newContext", params, NO_TIMEOUT);
     BrowserContextImpl context = connection.getExistingObject(result.getAsJsonObject().getAsJsonObject("context").get("guid").getAsString());
-    context.videosDir = options.recordVideoDir;
-    if (options.baseURL != null) {
-      context.setBaseUrl(options.baseURL);
-    }
-    context.setRecordHar(recordHarPath, harContentPolicy);
-    if (launchOptions != null) {
-      context.tracing().setTracesDir(launchOptions.tracesDir);
-    }
-    contexts.add(context);
+    context.initializeHarFromOptions(harOptions);
     return context;
   }
 
   @Override
   public Page newPage(NewPageOptions options) {
-    return withLogging("Browser.newPage", () -> newPageImpl(options));
+    return withTitle("Create Page", () -> newPageImpl(options));
   }
 
   @Override
   public void startTracing(Page page, StartTracingOptions options) {
-    withLogging("Browser.startTracing", () -> startTracingImpl(page, options));
-  }
-
-  private void startTracingImpl(Page page, StartTracingOptions options) {
     if (options == null) {
       options = new StartTracingOptions();
     }
@@ -245,15 +192,11 @@ class BrowserImpl extends ChannelOwner implements Browser {
     if (page != null) {
       params.add("page", ((PageImpl) page).toProtocolRef());
     }
-    sendMessage("startTracing", params);
+    sendMessage("startTracing", params, NO_TIMEOUT);
   }
 
   @Override
   public byte[] stopTracing() {
-    return withLogging("Browser.stopTracing", () -> stopTracingImpl());
-  }
-
-  private byte[] stopTracingImpl() {
     JsonObject json = sendMessage("stopTracing").getAsJsonObject();
     ArtifactImpl artifact = connection.getExistingObject(json.getAsJsonObject().getAsJsonObject("artifact").get("guid").getAsString());
     byte[] data = artifact.readAllBytes();
@@ -294,16 +237,44 @@ class BrowserImpl extends ChannelOwner implements Browser {
 
   @Override
   void handleEvent(String event, JsonObject parameters) {
-    if ("close".equals(event)) {
-      didClose();
+    switch (event) {
+      case "context":
+        didCreateContext(connection.getExistingObject(parameters.getAsJsonObject("context").get("guid").getAsString()));
+        break;
+      case "close":
+        didClose();
+        break;
     }
   }
 
   @Override
   public CDPSession newBrowserCDPSession() {
     JsonObject params = new JsonObject();
-    JsonObject result = sendMessage("newBrowserCDPSession", params).getAsJsonObject();
+    JsonObject result = sendMessage("newBrowserCDPSession", params, NO_TIMEOUT).getAsJsonObject();
     return connection.getExistingObject(result.getAsJsonObject("session").get("guid").getAsString());
+  }
+
+  protected void connectToBrowserType(BrowserTypeImpl browserType, Path tracesDir){
+    // Note: when using connect(), `browserType` is different from `this.parent`.
+    // This is why browser type is not wired up in the constructor, and instead this separate method is called later on.
+    this.browserType = browserType;
+    this.tracePath = tracesDir;
+
+    for (BrowserContextImpl context : contexts) {
+      context.tracing().setTracesDir(tracesDir);
+      browserType.playwright.selectors.contextsForSelectors.add(context);
+    }
+  }
+
+  private void didCreateContext(BrowserContextImpl context) {
+    context.browser = this;
+    contexts.add(context);
+    // Note: when connecting to a browser, initial contexts arrive before `_browserType` is set,
+    // and will be configured later in `ConnectToBrowserType`.
+    if (browserType != null) {
+      context.tracing().setTracesDir(tracePath);
+      browserType.playwright.selectors.contextsForSelectors.add(context);
+    }
   }
 
   private void didClose() {
